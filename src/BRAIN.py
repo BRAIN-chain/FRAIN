@@ -6,7 +6,6 @@
 import os
 import copy
 import time
-import random
 import pickle
 import numpy as np
 import statistics
@@ -17,7 +16,7 @@ from tensorboardX import SummaryWriter
 
 from impls.options import args_parser
 from impls.update import LocalUpdate, ByzantineLocalUpdate, test_inference
-from impls.utils import get_dataset, compose_weight, weighted_average_weights, exp_details
+from impls.utils import get_dataset, compose_weight, exp_details
 
 from impls.cache import ItemCache
 from impls.moving_average import MovingAverage
@@ -75,14 +74,6 @@ if __name__ == '__main__':
     # Moving Average
     wma = MovingAverage(args.window)
 
-    # drift
-    drifted_model = make_net(widths, batchnorm_momentum, scaling_factor)
-    drifted_model.load_state_dict(global_weights)
-    drifted_model.train()
-
-    local_models = []
-    scores = []
-
     for epoch in tqdm(range(args.epochs + args.stale)):
         if (len(cache.cache) == 0) and (epoch >= args.epochs):
             break
@@ -92,8 +83,6 @@ if __name__ == '__main__':
 
         if (epoch < args.epochs):
             global_model.train()
-            drifted_model.train()
-
             m = max(int(args.frac * args.num_users), 1)
             idxs_users = np.random.choice(
                 range(args.num_users), m, replace=False)
@@ -110,19 +99,8 @@ if __name__ == '__main__':
                                                        dataset=train_dataset, idxs=[],
                                                        logger=logger)
 
-                if args.drift == 0:
-                    w, loss = local_model.update_weights(
-                        model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
-                elif args.drift == args.num_users:
-                    w, loss = local_model.update_weights(
-                        model=copy.deepcopy(drifted_model), epochs=args.local_ep, global_round=epoch)
-                elif random.random() < args.drift / args.num_users:
-                    w, loss = local_model.update_weights(
-                        model=copy.deepcopy(drifted_model), epochs=args.local_ep, global_round=epoch)
-                else:
-                    w, loss = local_model.update_weights(
-                        model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
-
+                w, loss = local_model.update_weights(
+                    model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
                 if idx >= args.byzantines:
                     traning_times.append(time.time() - traning_start)
 
@@ -177,20 +155,6 @@ if __name__ == '__main__':
                         global_weights, local_weight, alpha)
                     global_model.load_state_dict(global_weights)
 
-        # drift
-        if len(local_weights) != 0:
-            for local_weight, score in zip(local_weights, local_eval_med_accs):
-                if score is None:
-                    pass
-                else:
-                    local_models.append(local_weight)
-                    scores.append(score)
-
-        if len(local_models) != 0:
-            drifted_weights = weighted_average_weights(
-                local_models[-1 * args.window:], scores[-1 * args.window:])
-            drifted_model.load_state_dict(drifted_weights)
-
         # Test inference after completion of training
         test_acc, test_loss = test_inference(args, global_model, test_dataset)
         test_acc_collect.append(test_acc)
@@ -201,10 +165,10 @@ if __name__ == '__main__':
         # print(f'Test Loss    : {format(test_loss)}')
 
     # Saving the objects test_loss_collect and test_acc_collect:
-    file_name = './save/objects/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}.pkl'.\
+    file_name = './save/objects/brain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_{}.pkl'.\
         format(args.dataset, args.model, args.epochs, args.frac, args.iid,
                args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-               args.diff, args.window, args.stale, args.threshold, args.drift, time.time())
+               args.diff, args.window, args.stale, args.threshold, time.time())
 
     with open(file_name, 'wb') as f:
         pickle.dump([test_loss_collect, test_acc_collect], f)
@@ -228,10 +192,10 @@ if __name__ == '__main__':
     plt.plot(range(len(test_loss_collect)), test_loss_collect, color='r')
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_loss.png'.
+    plt.savefig('./save/brain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_loss.png'.
                 format(args.dataset, args.model, args.epochs, args.frac,
                        args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-                       args.diff, args.window, args.stale, args.threshold, args.drift))
+                       args.diff, args.window, args.stale, args.threshold))
 
     # Plot Average Accuracy vs Communication rounds
     plt.figure()
@@ -239,7 +203,7 @@ if __name__ == '__main__':
     plt.plot(range(len(test_acc_collect)), test_acc_collect, color='k')
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_acc.png'.
+    plt.savefig('./save/brain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_acc.png'.
                 format(args.dataset, args.model, args.epochs, args.frac,
                        args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-                       args.diff, args.window, args.stale, args.threshold, args.drift))
+                       args.diff, args.window, args.stale, args.threshold))

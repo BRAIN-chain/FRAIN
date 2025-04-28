@@ -1,5 +1,2 @@
-python src/visual.py
-python src/visual_combine.py
-
-python src/cache.py
-python src/drift.py
+$ PYTHONPATH=$(pwd) python visaul/graph.py
+$ PYTHONPATH=$(pwd) python visaul/graph_combine.py

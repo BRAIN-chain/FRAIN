@@ -1,4 +1,4 @@
-from moving_average import MovingAverage
+from src.moving_average import MovingAverage
 
 
 def test_get_current_average_without_new_value():

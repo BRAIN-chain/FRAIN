@@ -1,6 +1,6 @@
 # test_cache.py
 import numpy as np
-from cache import ItemCache  # Import the class from your cache.py file
+from src.cache import ItemCache  # Import the class from your cache.py file
 
 
 def test_add_and_remove_specific_item():

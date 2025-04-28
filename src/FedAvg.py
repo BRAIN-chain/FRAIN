@@ -13,11 +13,9 @@ from tqdm import tqdm
 import torch
 from tensorboardX import SummaryWriter
 
-from options import args_parser
-from update import LocalUpdate, ByzantineLocalUpdate, test_inference
-from utils import get_dataset, compose_weight, exp_details
-
-from cache import ItemCache
+from impls.options import args_parser
+from impls.update import LocalUpdate, ByzantineLocalUpdate, test_inference
+from impls.utils import get_dataset, average_weights, exp_details
 
 from airbench.model import make_net
 from airbench.hyperparameters import hyp
@@ -62,46 +60,36 @@ if __name__ == '__main__':
 
     test_loss_collect, test_acc_collect = [], []
 
-    # Cache
-    cache = ItemCache(min_counter=0, max_counter=args.stale)
-
-    for epoch in tqdm(range(args.epochs + args.stale)):
-        if (len(cache.cache) == 0) and (epoch >= args.epochs):
-            break
-
+    for epoch in tqdm(range(args.epochs)):
         local_weights = []
         # print(f'\n | Global Training Round : {epoch+1} |\n')
 
-        if (epoch < args.epochs):
-            global_model.train()
-            m = max(int(args.frac * args.num_users), 1)
-            idxs_users = np.random.choice(
-                range(args.num_users), m, replace=False)
+        global_model.train()
+        m = max(int(args.frac * args.num_users), 1)
+        idxs_users = np.random.choice(range(args.num_users), m, replace=False)
 
-            for idx in idxs_users:
-                if idx >= args.byzantines:
-                    local_model = LocalUpdate(args=args,  hyps=hyp,
-                                              dataset=train_dataset, idxs=user_groups[idx -
-                                                                                      args.byzantines],
-                                              logger=logger)
-                else:
-                    local_model = ByzantineLocalUpdate(args=args, hyps=None,
-                                                       dataset=train_dataset, idxs=[],
-                                                       logger=logger)
-                w, loss = local_model.update_weights(
-                    model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
+        for idx in idxs_users:
+            if idx >= args.byzantines:
+                local_model = LocalUpdate(args=args, hyps=hyp,
+                                          dataset=train_dataset, idxs=user_groups[idx -
+                                                                                  args.byzantines],
+                                          logger=logger)
+            else:
+                local_model = ByzantineLocalUpdate(args=args, hyps=None,
+                                                   dataset=train_dataset, idxs=[],
+                                                   logger=logger)
 
-                # local_weights.append(copy.deepcopy(w))
-                cache.add_item_with_random_counter(copy.deepcopy(w))
+            w, loss = local_model.update_weights(
+                model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
 
-        local_weights = cache.update_counters()
+            local_weights.append(copy.deepcopy(w))
+            # if loss is not None:
+            # local_losses.append(copy.deepcopy(loss))
+        # test_loss_collect.append(sum(local_losses)/len(local_losses))
 
         # update global weights
-        if len(local_weights) != 0:
-            for local_weight in local_weights:
-                global_weights = compose_weight(
-                    global_weights, local_weight, args.alpha)
-                global_model.load_state_dict(global_weights)
+        global_weights = average_weights(local_weights)
+        global_model.load_state_dict(global_weights)
 
         # Test inference after completion of training
         test_acc, test_loss = test_inference(args, global_model, test_dataset)
@@ -113,9 +101,9 @@ if __name__ == '__main__':
         # print(f'Test Loss    : {format(test_loss)}')
 
     # Saving the objects test_loss_collect and test_acc_collect:
-    file_name = './save/objects/fedasync_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_S{}_A{}_{}.pkl'.\
+    file_name = './save/objects/fedavg_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_{}.pkl'.\
         format(args.dataset, args.model, args.epochs, args.frac, args.iid,
-               args.local_ep, args.local_bs, args.byzantines, args.stale, args.alpha, time.time())
+               args.local_ep, args.local_bs, args.byzantines, time.time())
 
     with open(file_name, 'wb') as f:
         pickle.dump([test_loss_collect, test_acc_collect], f)
@@ -133,9 +121,9 @@ if __name__ == '__main__':
     plt.plot(range(len(test_loss_collect)), test_loss_collect, color='r')
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/fedasync_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_S{}_A{}_loss.png'.
+    plt.savefig('./save/fedavg_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_loss.png'.
                 format(args.dataset, args.model, args.epochs, args.frac,
-                       args.iid, args.local_ep, args.local_bs, args.byzantines, args.stale, args.alpha))
+                       args.iid, args.local_ep, args.local_bs, args.byzantines))
 
     # Plot Average Accuracy vs Communication rounds
     plt.figure()
@@ -143,6 +131,6 @@ if __name__ == '__main__':
     plt.plot(range(len(test_acc_collect)), test_acc_collect, color='k')
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/fedasync_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_S{}_A{}_acc.png'.
+    plt.savefig('./save/fedavg_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_acc.png'.
                 format(args.dataset, args.model, args.epochs, args.frac,
-                       args.iid, args.local_ep, args.local_bs, args.byzantines, args.stale, args.alpha))
+                       args.iid, args.local_ep, args.local_bs, args.byzantines))

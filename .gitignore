@@ -1,11 +1,12 @@
+.python-version
+__pycache__
+
 .DS_Store
-src/__pycache__
 
 save
 data
 logs
 results
-src/airbench/__pycache__
 
 /simul
 /simul_heatmap
