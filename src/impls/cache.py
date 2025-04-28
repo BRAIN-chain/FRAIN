@@ -13,33 +13,47 @@ class ItemCache:
     def add_item_with_random_counter(self, item):
         counter = random.randint(self.min_counter, self.max_counter)
         id_ = self.next_id
-        self.cache.append((id_, item, counter))
+        # use the last `counter` as staleless
+        self.cache.append((id_, item, counter, counter))
         self.staleness[id_] = counter
         self.next_id += 1
         return id_
 
     def add_item_with_specific_counter(self, item, counter):
         id_ = self.next_id
-        self.cache.append((id_, item, counter))
+        # use the last `counter` as staleless
+        self.cache.append((id_, item, counter, counter))
         self.staleness[id_] = counter
         self.next_id += 1
         return id_
 
-    def update_counters(self):
-        removed_items = [item for _, item,
-                         counter in self.cache if counter-1 <= 0]
-        self.cache = [(id_, item, counter-1)
-                      for id_, item, counter in self.cache if counter-1 > 0]
-        return removed_items
+    def update_counters(self, return_staleness=False):
+        removed_items = [item for _, item, counter,
+                         _ in self.cache if counter-1 <= 0]
+        removed_stales = [stale for _, _, counter,
+                          stale in self.cache if counter-1 <= 0]
 
-    def update_counters_with_ids(self):
-        removed_items = [item for _, item,
-                         counter in self.cache if counter-1 <= 0]
-        removed_item_ids = [id_ for id_, _,
-                            counter in self.cache if counter-1 <= 0]
-        self.cache = [(id_, item, counter-1)
-                      for id_, item, counter in self.cache if counter-1 > 0]
-        return removed_items, removed_item_ids
+        self.cache = [(id_, item, counter-1, stale)
+                      for id_, item, counter, stale in self.cache if counter-1 > 0]
+        if return_staleness:
+            return removed_items, removed_stales
+        else:
+            return removed_items
+
+    def update_counters_with_ids(self, return_staleness=False):
+        removed_items = [item for _, item, counter,
+                         _ in self.cache if counter-1 <= 0]
+        removed_item_ids = [id_ for id_, _, counter,
+                            _ in self.cache if counter-1 <= 0]
+        removed_stales = [stale for _, _, counter,
+                          stale in self.cache if counter-1 <= 0]
+
+        self.cache = [(id_, item, counter-1, stale)
+                      for id_, item, counter, stale in self.cache if counter-1 > 0]
+        if return_staleness:
+            return removed_items, removed_stales, removed_item_ids
+        else:
+            return removed_items, removed_item_ids
 
 
 # Example usage

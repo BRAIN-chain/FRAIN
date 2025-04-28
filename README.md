@@ -19,14 +19,6 @@ $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/BRAIN.py --model=cnn --dat
 $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --verbose=0 --local_bs=50
 ```
 
-<!--
-# TODO
-- [ ] FRAIN
-- [ ] drift (sync)
-- [ ] ablation studies
--->
-
-
 # Visualize
 
 - Do multiple run (ex. 10) to draw dots well.

@@ -17,7 +17,8 @@ from tensorboardX import SummaryWriter
 
 from impls.options import args_parser
 from impls.update import LocalUpdate, ByzantineLocalUpdate, test_inference
-from impls.utils import get_dataset, compose_weight, weighted_average_weights, exp_details
+from impls.utils import get_dataset, compose_weight_slerp, weighted_average_weights, exp_details
+from impls.utils import compose_weight as compose_weight_lerp
 
 from impls.cache import ItemCache
 from impls.moving_average import MovingAverage
@@ -110,7 +111,7 @@ if __name__ == '__main__':
                                                        dataset=train_dataset, idxs=[],
                                                        logger=logger)
 
-                if args.drift == 0:
+                if args.drift == 0:  # no fast sync (same as BRAIN)
                     w, loss = local_model.update_weights(
                         model=copy.deepcopy(global_model), epochs=args.local_ep, global_round=epoch)
                 elif args.drift == args.num_users:
@@ -127,9 +128,14 @@ if __name__ == '__main__':
                     traning_times.append(time.time() - traning_start)
 
                 # local_weights.append(copy.deepcopy(w))
-                cache.add_item_with_random_counter(copy.deepcopy(w))
+                cache.add_item_with_random_counter(copy.deepcopy(w), epoch)
 
-        local_weights = cache.update_counters()
+        # use counter for staleness
+        # - return list of the original counters (counter == staleness)
+        # - e.g.) 0 ~ 4
+        local_weights, local_staleness = cache.update_counters(
+            return_epoch=True
+        )
 
         # BRAIN: do evaluate, to get score, among randomly sampled nodes
         committee = list(range(args.num_users))
@@ -160,10 +166,29 @@ if __name__ == '__main__':
 
                 med_score = statistics.median(local_eval_acc)
                 # BRAIN: reject updates using score by `threshold`
+                # FRAIN: TODO: score functions
+                # - use `local_staleness`
+                # - [ ] * args: polynomial TH (a)
+                # - [ ] * args: hinge THs (a, b, c)
                 if med_score >= args.threshold:
+                    # 1) constant
                     local_eval_med_accs.append(med_score)
+
+                    # 2) poly (polynomial)
+
+                    # 3) hinge
+
                 else:
                     local_eval_med_accs.append(None)
+
+        # agreed score
+        if len(local_weights) != 0:
+            for local_weight, score in zip(local_weights, local_eval_med_accs):
+                if score is None:
+                    pass
+                else:
+                    local_models.append(local_weight)
+                    scores.append(score)
 
         # update global weights
         if len(local_weights) != 0:
@@ -173,22 +198,44 @@ if __name__ == '__main__':
                     pass
                 else:
                     alpha = wma.next(score)
-                    global_weights = compose_weight(
-                        global_weights, local_weight, alpha)
+
+                    if (args.interpol == 'slerp'):
+                        global_weights = compose_weight_slerp(
+                            global_weights, local_weight, alpha)
+                    elif (args.dataset == 'lerp'):  # same as BRAIN
+                        global_weights = compose_weight_lerp(
+                            global_weights, local_weight, alpha)
+                    else:
+                        exit('Error: unrecognized interpolation method')
+
                     global_model.load_state_dict(global_weights)
 
         # drift
-        if len(local_weights) != 0:
-            for local_weight, score in zip(local_weights, local_eval_med_accs):
-                if score is None:
-                    pass
-                else:
-                    local_models.append(local_weight)
-                    scores.append(score)
-
         if len(local_models) != 0:
-            drifted_weights = weighted_average_weights(
-                local_models[-1 * args.window:], scores[-1 * args.window:])
+            # drifted_weights = weighted_average_weights(
+            #     local_models[-1 * args.window:],
+            #     scores[-1 * args.window:]
+            # )
+            pairs = list(zip(local_models, scores))
+            filtered_pairs = []
+            for model, score in reversed(pairs):
+                if score >= args.fast_threshold:
+                    filtered_pairs.append((model, score))
+                    if len(filtered_pairs) == args.fast_window:
+                        break
+            if not filtered_pairs:  # fallback
+                drifted_weights = weighted_average_weights(
+                    local_models[-args.fast_window:],
+                    scores[-args.fast_window:]
+                )
+            else:
+                filtered_pairs.reverse()
+                filtered_models, filtered_scores = zip(*filtered_pairs)
+                drifted_weights = weighted_average_weights(
+                    filtered_models,
+                    filtered_scores
+                )
+
             drifted_model.load_state_dict(drifted_weights)
 
         # Test inference after completion of training

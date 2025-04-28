@@ -131,13 +131,61 @@ def weighted_average_weights(w, a):
     return w_avg
 
 
-def compose_weight(w0, w1, a=0.6):
+def compose_weight(w0, w1, a=0.6):  # LERP
     """
     Returns the average of the weights.
     """
+    # TODO: overhead
+
     w_t = copy.deepcopy(w0)
     for key in w_t.keys():
         w_t[key] = (1.0-a) * w0[key] + a * w1[key]
+    return w_t
+
+
+def compose_weight_slerp(w0, w1, a=0.6, DOT_THRESHOLD=0.9995, eps=1e-8):
+    """
+    Returns the SLERP-based merge of w0 and w1.
+
+    References:
+    - https://gist.github.com/dvschultz/3af50c40df002da3b751efab1daddf2c
+    - https://github.com/arcee-ai/mergekit/blob/main/mergekit/merge_methods/slerp.py#L100
+    """
+    # TODO: overhead
+
+    w_t = copy.deepcopy(w0)
+
+    def normalize(v, eps):
+        norm_v = torch.norm(v, p=2)
+        if norm_v > eps:
+            v = v / norm_v
+        return v
+
+    def slerp_param(v0, v1, alpha):
+        v0_copy = v0.clone()
+        v1_copy = v1.clone()
+
+        v0_norm = normalize(v0_copy, eps)
+        v1_norm = normalize(v1_copy, eps)
+
+        dot = torch.sum(v0_norm * v1_norm)
+
+        # If absolute value of dot product is almost 1, vectors are ~colinear, so use lerp
+        if torch.abs(dot) > DOT_THRESHOLD:
+            return (1.0 - alpha) * v0_copy + alpha * v1_copy
+
+        # SLERP
+        theta_0 = torch.acos(dot)
+        theta_t = alpha * theta_0
+        sin_theta_0 = torch.sin(theta_0)
+        sin_theta_t = torch.sin(theta_t)
+
+        s0 = torch.sin(theta_0 - theta_t) / sin_theta_0
+        s1 = sin_theta_t / sin_theta_0
+        return s0 * v0_copy + s1 * v1_copy
+
+    for key in w_t.keys():
+        w_t[key] = slerp_param(w0[key], w1[key], a)
     return w_t
 
 

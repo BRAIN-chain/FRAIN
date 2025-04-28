@@ -32,8 +32,25 @@ def args_parser():
                         help='accuracy threshold to ignore (default: 0.125)')
     parser.add_argument('--score_byzantines', type=int, default=0,
                         help="number of Byzantine users who submit random score: SZ")
+
+    # FRAIN arguments
     parser.add_argument('--drift', type=int, default=0,
                         help="number of users who are drifted from global model")
+    parser.add_argument('--fast_window', type=int, default=2,
+                        help='window size for fast sync (default: 2) (>= 2)')
+    parser.add_argument('--fast_threshold', type=float, default=0.125,
+                        help='fast sync threshold to ignore (default: 0.125)')
+    parser.add_argument('--interpol', type=str, default='slerp',
+                        help='interpolation method (lerp or slerp)')
+    parser.add_argument('--adaptive', type=str, default='constant',
+                        help='adaptive mixing method (constant, poly or hinge)')
+    parser.add_argument('--adaptive_a', type=float, default=1.0,
+                        help='constant a in adaptive mixing method (default: 1.0)')
+    parser.add_argument('--adaptive_b', type=float, default=1.0,
+                        help='constant b in adaptive mixing method (default: 1.0)')
+    parser.add_argument('--adaptive_c', type=float, default=4.0,
+                        help='constant c in adaptive mixing method (default: 4.0)')
+
     # model arguments
     parser.add_argument('--model', type=str, default='cnn', help='model name')
     # parser.add_argument('--norm', type=str, default='batch_norm',
