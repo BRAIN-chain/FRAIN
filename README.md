@@ -4,19 +4,19 @@
 
 ```bash
 # SGD (single-thread)
-$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/SGD.py --model=cnn --dataset=cifar --epochs=200 --verbose=0 --local_bs=50 --gpu=0
+$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/SGD.py --model=cnn --dataset=cifar --epochs=200 --verbose=0 --local_bs=50
 
 # FedAvg
-$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FedAvg.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --frac=0.1 --verbose=0 --local_bs=50 --gpu=0
+$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FedAvg.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --frac=0.1 --verbose=0 --local_bs=50
 
 # FedAsync
-$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FedAsync.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --frac=0.1 --stale=4 --alpha=0.6 --verbose=0 --local_bs=50 --gpu=0
+$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FedAsync.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --frac=0.1 --stale=4 --alpha=0.6 --verbose=0 --local_bs=50
 
 # BRAIN
-$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/BRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --verbose=0 --local_bs=50 --gpu=0
+$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/BRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --verbose=0 --local_bs=50
 
 # FRAIN
-$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --verbose=0 --local_bs=50 --gpu=0
+$ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --verbose=0 --local_bs=50
 ```
 
 <!--
@@ -33,10 +33,10 @@ $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FRAIN.py --model=cnn --dat
 
 ```bash
 # Acc & Loss
-$ PYTHONPATH=$(pwd) python visaul/graph.py
+$ PYTHONPATH=$(pwd) python visual/graph.py
 
 # Combined Graph
-$ PYTHONPATH=$(pwd) python visaul/graph_combine.py
+$ PYTHONPATH=$(pwd) python visual/graph_combine.py
 ```
 
 # Test
