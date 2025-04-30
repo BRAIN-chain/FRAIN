@@ -9,6 +9,35 @@ import pandas as pd
 import itertools
 
 
+# Initialize a color palette
+# palette = sns.color_palette("pastel", 10)
+palette = [
+    (0.8156862745098039, 0.7333333333333333, 1.0),
+    (0.7254901960784313, 0.9490196078431372, 0.9411764705882353),
+    (0.6313725490196078, 0.788235294117647, 0.9568627450980393),
+    (0.5529411764705883, 0.8980392156862745, 0.6313725490196078),
+    (1.0, 0.7058823529411765, 0.5098039215686274),
+    (1.0, 0.6235294117647059, 0.6078431372549019),
+    (0.9803921568627451, 0.6901960784313725, 0.8941176470588236),
+    (0.8705882352941177, 0.7333333333333333, 0.6078431372549019),
+    (0.8117647058823529, 0.8117647058823529, 0.8117647058823529),
+    (1.0, 0.996078431372549, 0.6392156862745098)
+]
+markers = ['o', '^', 'd', 'X', 's', 'v', '*', 'p', '<', '>']
+markers_palette = [
+    (0.9450980392156862, 0.2980392156862745, 0.7568627450980392),
+    (0.00784313725490196, 0.24313725490196078, 1.0),
+    (0.10196078431372549, 0.788235294117647, 0.2196078431372549),
+    (1.0, 0.48627450980392156, 0.0),
+    (0.9098039215686274, 0.0, 0.043137254901960784),
+    (0.5450980392156862, 0.16862745098039217, 0.8862745098039215),
+    (0.6235294117647059, 0.2823529411764706, 0.0),
+    (0.6392156862745098, 0.6392156862745098, 0.6392156862745098),
+    (1.0, 0.7686274509803922, 0.0),
+    (0.0, 0.8431372549019608, 1.0)
+]
+
+
 def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, title, save_path,
                                             fig_size=(4, 4), x_max=None, x_mul=20, y_min=0, y_max=None,
                                             locs=dict(loc='upper right'),
@@ -17,29 +46,6 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
     plt.figure(figsize=fig_size)
     sns.set_theme(style="ticks")
 
-    # Initialize a color palette
-    # palette = sns.color_palette("pastel", 10)
-    palette = [(0.6313725490196078, 0.788235294117647, 0.9568627450980393),
-               (0.5529411764705883, 0.8980392156862745, 0.6313725490196078),
-               (1.0, 0.7058823529411765, 0.5098039215686274),
-               (1.0, 0.6235294117647059, 0.6078431372549019),
-               (0.8156862745098039, 0.7333333333333333, 1.0),
-               (0.9803921568627451, 0.6901960784313725, 0.8941176470588236),
-               (0.8705882352941177, 0.7333333333333333, 0.6078431372549019),
-               (0.8117647058823529, 0.8117647058823529, 0.8117647058823529),
-               (1.0, 0.996078431372549, 0.6392156862745098),
-               (0.7254901960784313, 0.9490196078431372, 0.9411764705882353)]
-    markers = ['o', '^', 'd', 'X', 's', 'v', '*', 'p', '<', '>']
-    markers_palette = [(0.00784313725490196, 0.24313725490196078, 1.0),
-                       (0.10196078431372549, 0.788235294117647, 0.2196078431372549),
-                       (1.0, 0.48627450980392156, 0.0),
-                       (0.9098039215686274, 0.0, 0.043137254901960784),
-                       (0.5450980392156862, 0.16862745098039217, 0.8862745098039215),
-                       (0.9450980392156862, 0.2980392156862745, 0.7568627450980392),
-                       (0.6235294117647059, 0.2823529411764706, 0.0),
-                       (0.6392156862745098, 0.6392156862745098, 0.6392156862745098),
-                       (1.0, 0.7686274509803922, 0.0),
-                       (0.0, 0.8431372549019608, 1.0)]
     custom_legend_handles = []
 
     # Find the maximum length among all datasets to ensure uniform plotting
@@ -118,8 +124,14 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
     # plt.title(f"{metric_name}")
     plt.xlabel(None)
     plt.ylabel(None)
-    # plt.legend(**locs)
-    plt.legend(handles=custom_legend_handles, **locs)
+    if locs is not None:
+        # plt.legend(**locs)
+        plt.legend(handles=custom_legend_handles, **locs)
+    else:
+        ax = plt.gca()
+        if ax.get_legend() is not None:
+            ax.get_legend().remove()
+
     plt.tight_layout()
     plt.grid(linewidth=0.25)
 
@@ -147,29 +159,6 @@ def plot_comparison_with_broken_y_axis_and_different_sizes(file_paths, metric_in
     ax1 = plt.subplot(gs[0])
     ax2 = plt.subplot(gs[1], sharex=ax1)
 
-    # Handling the palette
-    # palette = sns.color_palette("bright", len(file_paths))
-    palette = [(0.6313725490196078, 0.788235294117647, 0.9568627450980393),
-               (0.5529411764705883, 0.8980392156862745, 0.6313725490196078),
-               (1.0, 0.7058823529411765, 0.5098039215686274),
-               (1.0, 0.6235294117647059, 0.6078431372549019),
-               (0.8156862745098039, 0.7333333333333333, 1.0),
-               (0.9803921568627451, 0.6901960784313725, 0.8941176470588236),
-               (0.8705882352941177, 0.7333333333333333, 0.6078431372549019),
-               (0.8117647058823529, 0.8117647058823529, 0.8117647058823529),
-               (1.0, 0.996078431372549, 0.6392156862745098),
-               (0.7254901960784313, 0.9490196078431372, 0.9411764705882353)]
-    markers = ['o', '^', 'd', 'X', 's', 'v', '*', 'p', '<', '>']
-    markers_palette = [(0.00784313725490196, 0.24313725490196078, 1.0),
-                       (0.10196078431372549, 0.788235294117647, 0.2196078431372549),
-                       (1.0, 0.48627450980392156, 0.0),
-                       (0.9098039215686274, 0.0, 0.043137254901960784),
-                       (0.5450980392156862, 0.16862745098039217, 0.8862745098039215),
-                       (0.9450980392156862, 0.2980392156862745, 0.7568627450980392),
-                       (0.6235294117647059, 0.2823529411764706, 0.0),
-                       (0.6392156862745098, 0.6392156862745098, 0.6392156862745098),
-                       (1.0, 0.7686274509803922, 0.0),
-                       (0.0, 0.8431372549019608, 1.0)]
     custom_legend_handles = []
 
     # Variables to store data for plotting
@@ -268,8 +257,13 @@ def plot_comparison_with_broken_y_axis_and_different_sizes(file_paths, metric_in
              top_subplot_size_ratio/(top_subplot_size_ratio+bottom_subplot_size_ratio)], transform=ax2.transAxes, zorder=3, **kwargs)
 
     # Legend and titles
-    # ax2.legend(**locs)
-    ax2.legend(handles=custom_legend_handles, **locs)
+    if locs is not None:
+        # ax2.legend(**locs)
+        ax2.legend(handles=custom_legend_handles, **locs)
+    else:
+        ax = plt.gca()
+        if ax.get_legend() is not None:
+            ax.get_legend().remove()
     # metric_name = "loss" if metric_index == 0 else "acc"
     # ax1.set_title(f"{metric_name} : {title}")
     # ax2.set_xlabel('Epoch')
@@ -318,9 +312,6 @@ if __name__ == '__main__':
     for iid in [1, 0]:
         save_path = './save/combined/iid' if iid == 1 else './save/combined/non_iid'
 
-        """
-        1. Performance
-        """
         multiplier = 1
         with open(f'{plot_directory}/nn_cifar_cnn_.pkl', 'rb') as file:
             data = pickle.load(file)
@@ -331,14 +322,19 @@ if __name__ == '__main__':
         with open(f'{plot_directory}/nn_cifar_cnn__extended.pkl', 'wb') as f:
             pickle.dump([extended_avg_sgd, extended_all_sgd], f)
 
+        """
+        1. Performance
+        """
         title = 'Convergence'
         file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
             f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
             f'{plot_directory}/nn_cifar_cnn__extended.pkl'
         ]
         labels = [
+            'FRAIN',
             'BRAIN',
             'FedAsync',
             'FedAvg',
@@ -351,6 +347,32 @@ if __name__ == '__main__':
             fig_size=(4, 3.5), x_max=200,
             locs=dict(loc='lower center', ncol=2),
             highlight=True)
+
+        """Magnifying"""
+        title = 'Convergence_Magnifying'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
+            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
+            f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
+            f'{plot_directory}/nn_cifar_cnn__extended.pkl'
+        ]
+        labels = [
+            'FRAIN',
+            'BRAIN',
+            'FedAsync',
+            'FedAvg',
+            'SGD'
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 2.5), x_max=21,
+            # y_min=0.4, y_max=1.0,
+            locs=None,
+            highlight=True)
+
+        continue  # TODO
 
         """
         2. Byzantine (x5)
