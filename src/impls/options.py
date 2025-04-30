@@ -44,10 +44,10 @@ def args_parser():
                         help='interpolation method (lerp or slerp)')
     parser.add_argument('--adaptive', type=str, default='constant',
                         help='adaptive mixing method (constant, poly or hinge)')
-    parser.add_argument('--adaptive_a', type=float, default=1.0,
-                        help='constant a in adaptive mixing method (default: 1.0)')
-    parser.add_argument('--adaptive_b', type=float, default=1.0,
-                        help='constant b in adaptive mixing method (default: 1.0)')
+    parser.add_argument('--adaptive_a', type=float, default=0.0,
+                        help='constant a in adaptive mixing method (default: 0.0)')
+    parser.add_argument('--adaptive_b', type=float, default=0.0,
+                        help='constant b in adaptive mixing method (default: 0.0)')
     parser.add_argument('--adaptive_c', type=float, default=4.0,
                         help='constant c in adaptive mixing method (default: 4.0)')
 

@@ -135,7 +135,7 @@ def compose_weight(w0, w1, a=0.6):  # LERP
     """
     Returns the average of the weights.
     """
-    # TODO: overhead
+    # TODO: overhead (test)
 
     w_t = copy.deepcopy(w0)
     for key in w_t.keys():
@@ -151,11 +151,13 @@ def compose_weight_slerp(w0, w1, a=0.6, DOT_THRESHOLD=0.9995, eps=1e-8):
     - https://gist.github.com/dvschultz/3af50c40df002da3b751efab1daddf2c
     - https://github.com/arcee-ai/mergekit/blob/main/mergekit/merge_methods/slerp.py#L100
     """
-    # TODO: overhead
+    # TODO: overhead (test)
 
     w_t = copy.deepcopy(w0)
 
     def normalize(v, eps):
+        v = v.float()
+
         norm_v = torch.norm(v, p=2)
         if norm_v > eps:
             v = v / norm_v

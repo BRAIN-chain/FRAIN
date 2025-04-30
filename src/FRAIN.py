@@ -128,13 +128,13 @@ if __name__ == '__main__':
                     traning_times.append(time.time() - traning_start)
 
                 # local_weights.append(copy.deepcopy(w))
-                cache.add_item_with_random_counter(copy.deepcopy(w), epoch)
+                cache.add_item_with_random_counter(copy.deepcopy(w))
 
         # use counter for staleness
         # - return list of the original counters (counter == staleness)
         # - e.g.) 0 ~ 4
-        local_weights, local_staleness = cache.update_counters(
-            return_epoch=True
+        local_weights, local_stales = cache.update_counters(
+            return_staleness=True
         )
 
         # BRAIN: do evaluate, to get score, among randomly sampled nodes
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
         local_eval_med_accs = []
         if len(local_weights) != 0:
-            for local_weight in local_weights:
+            for local_weight, local_stale in zip(local_weights, local_stales):
                 local_eval_acc = []
 
                 for idx in committee:
@@ -166,18 +166,38 @@ if __name__ == '__main__':
 
                 med_score = statistics.median(local_eval_acc)
                 # BRAIN: reject updates using score by `threshold`
-                # FRAIN: TODO: score functions
-                # - use `local_staleness`
-                # - [ ] * args: polynomial TH (a)
-                # - [ ] * args: hinge THs (a, b, c)
                 if med_score >= args.threshold:
-                    # 1) constant
+                    # FRAIN: score functions
+                    if (args.adaptive == 'constant'):
+                        pass  # med_score = med_score
+                    elif (args.adaptive == 'poly'):
+                        # args: polynomial (a)
+                        # use `local_stale`
+                        # med_score *= 1 / (1+stale)^a
+                        decay_factor = 1.0 / \
+                            ((1.0 + (local_stale)) ** args.adaptive_a)
+                        med_score *= decay_factor
+                    elif (args.adaptive == 'hinge'):
+                        # args: (a, b, c)
+                        # use `local_stale`
+                        # med_score *= (1/(a(stale-b)+1)-t)/(1-t), t = 1/(a(c-b)+1)
+                        if local_stale <= args.adaptive_b:
+                            decay_factor = 1.0
+                        elif local_stale >= args.adaptive_c:
+                            decay_factor = 0.0
+                        else:
+                            t = 1.0 / (args.adaptive_a *
+                                       (args.adaptive_c - args.adaptive_b) + 1.0)
+                            numerator = 1.0 / \
+                                (args.adaptive_a *
+                                 (local_stale - args.adaptive_b) + 1.0) - t
+                            denominator = 1.0 - t
+                            decay_factor = numerator / denominator
+                        med_score *= decay_factor
+                    else:
+                        exit('Error: unrecognized adative mixing method')
+
                     local_eval_med_accs.append(med_score)
-
-                    # 2) poly (polynomial)
-
-                    # 3) hinge
-
                 else:
                     local_eval_med_accs.append(None)
 
@@ -202,7 +222,7 @@ if __name__ == '__main__':
                     if (args.interpol == 'slerp'):
                         global_weights = compose_weight_slerp(
                             global_weights, local_weight, alpha)
-                    elif (args.dataset == 'lerp'):  # same as BRAIN
+                    elif (args.interpol == 'lerp'):  # same as BRAIN
                         global_weights = compose_weight_lerp(
                             global_weights, local_weight, alpha)
                     else:
@@ -223,6 +243,7 @@ if __name__ == '__main__':
                     filtered_pairs.append((model, score))
                     if len(filtered_pairs) == args.fast_window:
                         break
+            # LERP
             if not filtered_pairs:  # fallback
                 drifted_weights = weighted_average_weights(
                     local_models[-args.fast_window:],
@@ -248,10 +269,14 @@ if __name__ == '__main__':
         # print(f'Test Loss    : {format(test_loss)}')
 
     # Saving the objects test_loss_collect and test_acc_collect:
-    file_name = './save/objects/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}.pkl'.\
-        format(args.dataset, args.model, args.epochs, args.frac, args.iid,
-               args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-               args.diff, args.window, args.stale, args.threshold, args.drift, time.time())
+    file_name = './save/objects/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_{}.pkl'.\
+        format(
+            args.dataset, args.model, args.epochs, args.frac, args.iid,
+            args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
+            args.diff, args.window, args.stale, args.threshold,
+            args.drift, args.interpol, args.adaptive,
+            time.time()
+        )
 
     with open(file_name, 'wb') as f:
         pickle.dump([test_loss_collect, test_acc_collect], f)
@@ -275,10 +300,15 @@ if __name__ == '__main__':
     plt.plot(range(len(test_loss_collect)), test_loss_collect, color='r')
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_loss.png'.
-                format(args.dataset, args.model, args.epochs, args.frac,
-                       args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-                       args.diff, args.window, args.stale, args.threshold, args.drift))
+    plt.savefig(
+        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_loss.png'.
+        format(
+            args.dataset, args.model, args.epochs, args.frac,
+            args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
+            args.diff, args.window, args.stale, args.threshold,
+            args.drift, args.interpol, args.adaptive
+        )
+    )
 
     # Plot Average Accuracy vs Communication rounds
     plt.figure()
@@ -286,7 +316,12 @@ if __name__ == '__main__':
     plt.plot(range(len(test_acc_collect)), test_acc_collect, color='k')
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/drift_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_acc.png'.
-                format(args.dataset, args.model, args.epochs, args.frac,
-                       args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
-                       args.diff, args.window, args.stale, args.threshold, args.drift))
+    plt.savefig(
+        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_acc.png'.
+        format(
+            args.dataset, args.model, args.epochs, args.frac,
+            args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
+            args.diff, args.window, args.stale, args.threshold,
+            args.drift, args.interpol, args.adaptive
+        )
+    )
