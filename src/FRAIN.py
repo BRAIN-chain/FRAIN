@@ -269,12 +269,13 @@ if __name__ == '__main__':
         # print(f'Test Loss    : {format(test_loss)}')
 
     # Saving the objects test_loss_collect and test_acc_collect:
-    file_name = './save/objects/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_{}.pkl'.\
+    file_name = './save/objects/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_a{}_b{}_c{}_{}.pkl'.\
         format(
             args.dataset, args.model, args.epochs, args.frac, args.iid,
             args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
             args.diff, args.window, args.stale, args.threshold,
             args.drift, args.interpol, args.adaptive,
+            args.adaptive_a, args.adaptive_b, args.adaptive_c,
             time.time()
         )
 
@@ -301,12 +302,13 @@ if __name__ == '__main__':
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
     plt.savefig(
-        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_loss.png'.
+        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_a{}_b{}_c{}_loss.png'.
         format(
             args.dataset, args.model, args.epochs, args.frac,
             args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
             args.diff, args.window, args.stale, args.threshold,
-            args.drift, args.interpol, args.adaptive
+            args.drift, args.interpol, args.adaptive,
+            args.adaptive_a, args.adaptive_b, args.adaptive_c
         )
     )
 
@@ -317,11 +319,12 @@ if __name__ == '__main__':
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
     plt.savefig(
-        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_acc.png'.
+        './save/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_a{}_b{}_c{}_acc.png'.
         format(
             args.dataset, args.model, args.epochs, args.frac,
             args.iid, args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
             args.diff, args.window, args.stale, args.threshold,
-            args.drift, args.interpol, args.adaptive
+            args.drift, args.interpol, args.adaptive,
+            args.adaptive_a, args.adaptive_b, args.adaptive_c
         )
     )

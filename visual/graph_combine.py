@@ -12,18 +12,18 @@ import itertools
 # Initialize a color palette
 # palette = sns.color_palette("pastel", 10)
 palette = [
-    (0.8156862745098039, 0.7333333333333333, 1.0),
-    (0.7254901960784313, 0.9490196078431372, 0.9411764705882353),
+    (0.9803921568627451, 0.6901960784313725, 0.8941176470588236),
     (0.6313725490196078, 0.788235294117647, 0.9568627450980393),
     (0.5529411764705883, 0.8980392156862745, 0.6313725490196078),
     (1.0, 0.7058823529411765, 0.5098039215686274),
     (1.0, 0.6235294117647059, 0.6078431372549019),
-    (0.9803921568627451, 0.6901960784313725, 0.8941176470588236),
+    (0.8156862745098039, 0.7333333333333333, 1.0),
     (0.8705882352941177, 0.7333333333333333, 0.6078431372549019),
     (0.8117647058823529, 0.8117647058823529, 0.8117647058823529),
-    (1.0, 0.996078431372549, 0.6392156862745098)
+    (1.0, 0.996078431372549, 0.6392156862745098),
+    (0.7254901960784313, 0.9490196078431372, 0.9411764705882353),
 ]
-markers = ['o', '^', 'd', 'X', 's', 'v', '*', 'p', '<', '>']
+markers = ['s', 'o', '^', 'd', 'X', 'v', '*', 'p', '<', '>']
 markers_palette = [
     (0.9450980392156862, 0.2980392156862745, 0.7568627450980392),
     (0.00784313725490196, 0.24313725490196078, 1.0),
@@ -34,7 +34,7 @@ markers_palette = [
     (0.6235294117647059, 0.2823529411764706, 0.0),
     (0.6392156862745098, 0.6392156862745098, 0.6392156862745098),
     (1.0, 0.7686274509803922, 0.0),
-    (0.0, 0.8431372549019608, 1.0)
+    (0.0, 0.8431372549019608, 1.0),
 ]
 
 
@@ -42,8 +42,11 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
                                             fig_size=(4, 4), x_max=None, x_mul=20, y_min=0, y_max=None,
                                             locs=dict(loc='upper right'),
                                             highlight=False):
-    # plt.figure(figsize=(10, 6))
-    plt.figure(figsize=fig_size)
+
+    y_max = 1.0 if y_max == None else y_max
+
+    fig = plt.figure(figsize=fig_size)
+
     sns.set_theme(style="ticks")
 
     custom_legend_handles = []
@@ -52,7 +55,7 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
     max_length = 0
     avg_datasets = []
     all_datasets = []
-    for file_path in file_paths:
+    for f, file_path in enumerate(file_paths):
         with open(file_path, 'rb') as file:
             data = pickle.load(file)
             avg_data = data[0]
@@ -60,6 +63,22 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
             avg_datasets.append(avg_data[metric_index])
             all_datasets.append(all_data[metric_index])
             max_length = max(max_length, len(avg_data[metric_index]))
+
+    # Print std
+    for label, avg_dataset, all_dataset in zip(labels, avg_datasets, all_datasets):
+        min_run_length = min(len(run) for run in all_dataset)
+        trimmed_all_dataset = [run[:min_run_length] for run in all_dataset]
+        # shape: (runs, min_run_length)
+        all_arr = np.array(trimmed_all_dataset)
+
+        # per-epoch std
+        std_per_epoch = np.nanstd(all_arr, axis=0)  # shape: (epochs,)
+        max_std = np.nanmax(std_per_epoch)
+        min_std = np.nanmin(std_per_epoch)
+        mean_std = np.nanmean(std_per_epoch)
+        median_std = np.nanmedian(std_per_epoch)
+        # print(f"[{label}] all_data std per epoch: {std_per_epoch.tolist()}")
+        print(f"[{label:10.10}] std stats — max: {max_std:.4f}, min: {min_std:.4f}, mean: {mean_std:.4f}, median: {median_std:.4f}")
 
     # Plot each dataset, padding with NaNs where necessary
     for i, (avg_dataset, all_dataset, label) in enumerate(zip(avg_datasets, all_datasets, labels)):
@@ -87,25 +106,29 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
             {'Epoch': x_axis, 'Value': padded_avg_data, 'Group': label})
         sns.lineplot(x='Epoch', y='Value', data=df, style='Group', zorder=2,
                      dashes=False,
-                     linewidth=0.75, alpha=1.0 if i == 0 or not highlight else 0.6, color=marker_color)
+                     #  linewidth=0.75,
+                     linewidth=1.5 if i == 0 and highlight else 0.75,
+                     alpha=1.0 if i == 0 and highlight else 0.6, color=marker_color)
         #  markers=marker, markersize=4, markeredgewidth=0.5)
 
         # Overlay scatterplot at a reduced frequency for markers
         # Sampling for marker density
-        sampled_df = df.iloc[[(10+(i)*45) % x_max]]
+        sampled_df = df.iloc[[(20+(i)*40) % x_max]]
         sns.scatterplot(x='Epoch', y='Value', data=sampled_df, zorder=3,
                         marker=marker, color=marker_color, s=50, edgecolor='black',
                         legend=False)
 
         # Create a custom legend handle for this dataset
         line = mlines.Line2D([], [], color=marker_color, marker=marker,
-                             linestyle='-', linewidth=0.75,
+                             linestyle='-',
+                             #  linewidth=0.75,
+                             linewidth=1.5 if i == 0 and highlight else 0.75,
                              markersize=6, markeredgecolor='black', markeredgewidth=0.5,
                              label=label)
         custom_legend_handles.append(line)
 
     # Setting the y-axis limits
-    plt.ylim(y_min, 1.0 if y_max == None else y_max)
+    plt.ylim(y_min, y_max)
 
     # Customizing axes linewidth
     ax = plt.gca()  # Get the current Axes instance
@@ -141,165 +164,6 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
     print(f"Plot saved to {plot_path}")
 
 
-def plot_comparison_with_broken_y_axis_and_different_sizes(file_paths, metric_index, labels, title, save_path,
-                                                           fig_size=(4, 4), x_max=None, x_mul=20, y_min=0, y_max=None,
-                                                           locs=dict(loc='upper right'), break_point_start=None, break_point_end=None,
-                                                           top_subplot_size_ratio=2, bottom_subplot_size_ratio=1,
-                                                           highlight=False):
-    # Initialize the figure
-    plt.figure(figsize=fig_size)
-    # sns.set_theme(style="ticks")
-
-    # Create a gridspec with two rows of different heights
-    gs = gridspec.GridSpec(2, 1, height_ratios=[
-                           top_subplot_size_ratio, bottom_subplot_size_ratio],
-                           hspace=0.0, wspace=0)
-
-    # Create two subplots with the specified size ratios
-    ax1 = plt.subplot(gs[0])
-    ax2 = plt.subplot(gs[1], sharex=ax1)
-
-    custom_legend_handles = []
-
-    # Variables to store data for plotting
-    max_length = 0
-    avg_datasets = []
-    all_datasets = []
-
-    # Load data
-    for file_path in file_paths:
-        with open(file_path, 'rb') as file:
-            data = pickle.load(file)
-            avg_data = data[0][metric_index]
-            all_data = [ds[:x_max] for ds in data[1][metric_index]]
-            max_length = max(max_length, len(avg_data), *(len(ds)
-                             for ds in all_data))
-            avg_datasets.append(avg_data)
-            all_datasets.append(all_data)
-
-    # Determine x-axis range
-    x_axis = np.arange(max_length)
-    if x_max is not None:
-        x_axis = x_axis[:x_max]
-
-    for i, (avg_dataset, all_dataset, label) in enumerate(zip(avg_datasets, all_datasets, labels)):
-        # Adjust and plot data
-        padded_avg_data = np.pad(avg_dataset, (0, max_length - len(avg_dataset)),
-                                 'constant', constant_values=np.nan)[:x_max] if x_max else avg_dataset
-
-        x_axis = np.arange(max_length)
-        x_axis = x_axis if x_max == None else x_axis[:x_max]
-
-        # Specify color from the palette
-        color = palette[i]
-        marker = markers[i]
-        marker_color = markers_palette[i]
-
-        # Plot individual data points using Seaborn scatterplot for each data set
-        for data_set in all_dataset:
-            sns.scatterplot(x=np.arange(len(data_set)), y=data_set,
-                            alpha=0.1, s=20, color=color, legend=False, ax=ax1)
-            sns.scatterplot(x=np.arange(len(data_set)), y=data_set,
-                            alpha=0.1, s=20, color=color, legend=False, ax=ax2)
-
-        # Using pandas to handle NaNs gracefully in lineplot
-        padded_avg_data = padded_avg_data if x_max == None else padded_avg_data[:x_max]
-        df = pd.DataFrame(
-            {'Epoch': x_axis, 'Value': padded_avg_data, 'Group': label})
-
-        sns.lineplot(x='Epoch', y='Value', data=df, style='Group', zorder=2,
-                     dashes=False,
-                     linewidth=0.75, alpha=1.0 if i == 0 or not highlight else 0.6, color=marker_color, ax=ax1, legend=False)
-        #  markers=marker, markersize=4, markeredgewidth=0.5)
-        # Overlay scatterplot at a reduced frequency for markers
-        # Sampling for marker density
-        sampled_df = df.iloc[[(110+(i)*45) % x_max]]
-        sns.scatterplot(x='Epoch', y='Value', data=sampled_df, zorder=3, ax=ax1,
-                        marker=marker, color=marker_color, s=50, edgecolor='black',
-                        legend=False)
-
-        sns.lineplot(x='Epoch', y='Value', data=df, style='Group', zorder=2,
-                     dashes=False,
-                     linewidth=0.75, alpha=1.0 if i == 0 or not highlight else 0.6, color=marker_color, ax=ax2)
-        #  markers=marker, markersize=4, markeredgewidth=0.5)
-        # Overlay scatterplot at a reduced frequency for markers
-        # Sampling for marker density
-        sampled_df = df.iloc[[(110+(i)*45) % x_max]]
-        sns.scatterplot(x='Epoch', y='Value', data=sampled_df, zorder=3, ax=ax2,
-                        marker=marker, color=marker_color, s=50, edgecolor='black',
-                        legend=False)
-
-        # Create a custom legend handle for this dataset
-        line = mlines.Line2D([], [], color=marker_color, marker=marker,
-                             linestyle='-', linewidth=0.75,
-                             markersize=6, markeredgecolor='black', markeredgewidth=0.5,
-                             label=label)
-        custom_legend_handles.append(line)
-
-    # Apply the break in y-axis between the specified points
-    ax1.set_ylim(break_point_end, y_max if y_max is not None else 1.0)
-    ax2.set_ylim(y_min, break_point_start)
-    ax1.spines['bottom'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
-    ax2.xaxis.tick_bottom()
-    ax1.tick_params(axis='x', which='both', bottom=False,
-                    top=False, labelbottom=False)
-
-    # Broken axis marks
-    ax1.axhline(y=break_point_end+0.0003,
-                color='lightgray', linewidth=1, zorder=1)
-    d = .25  # proportion of vertical to horizontal extent of the slanted line
-    kwargs = dict(marker=[(-1, -d), (1, d)], markersize=10,
-                  linestyle="none", color='k', mec='k', mew=1, clip_on=False)
-    ax1.plot([0, 1], [0+0.03*bottom_subplot_size_ratio/(top_subplot_size_ratio+bottom_subplot_size_ratio), 0+0.03 *
-             bottom_subplot_size_ratio/(top_subplot_size_ratio+bottom_subplot_size_ratio)], transform=ax1.transAxes, zorder=3, **kwargs)
-    ax2.plot([0, 1], [1-0.03*top_subplot_size_ratio/(top_subplot_size_ratio+bottom_subplot_size_ratio), 1-0.03 *
-             top_subplot_size_ratio/(top_subplot_size_ratio+bottom_subplot_size_ratio)], transform=ax2.transAxes, zorder=3, **kwargs)
-
-    # Legend and titles
-    if locs is not None:
-        # ax2.legend(**locs)
-        ax2.legend(handles=custom_legend_handles, **locs)
-    else:
-        ax = plt.gca()
-        if ax.get_legend() is not None:
-            ax.get_legend().remove()
-    # metric_name = "loss" if metric_index == 0 else "acc"
-    # ax1.set_title(f"{metric_name} : {title}")
-    # ax2.set_xlabel('Epoch')
-    # ax1.set_ylabel(metric_name)
-    # ax2.set_ylabel(metric_name)
-    plt.subplots_adjust(hspace=0.0)  # Adjust space between subplots
-    ax1.set_xlabel(None)
-    ax1.set_ylabel(None)
-    ax2.set_xlabel(None)
-    ax2.set_ylabel(None)
-    plt.tight_layout()
-    ax1.grid(linewidth=0.25)
-    ax2.grid(linewidth=0.25)
-
-    for spine in ax1.spines.values():
-        spine.set_linewidth(0.5)  # Set the linewidth for the axes
-        spine.set_color('black')
-    for spine in ax2.spines.values():
-        spine.set_linewidth(0.5)  # Set the linewidth for the axes
-        spine.set_color('black')
-
-    # Adjusting x-axis labels to display values multiplied by `x_mul`
-    # For example, multiply 20 for 2 quorum * 10 local epochs
-    current_ticks = ax1.get_xticks()
-    new_tick_labels = [f"{int(tick)*x_mul}" for tick in current_ticks]
-    plt.xticks(current_ticks[1:len(current_ticks)-1],
-               new_tick_labels[1:len(new_tick_labels)-1])
-
-    # Save the plot
-    os.makedirs(save_path, exist_ok=True)
-    plot_path = os.path.join(save_path, f"{title}_broken_y_axis.png")
-    plt.savefig(plot_path, bbox_inches='tight', dpi=300)
-    plt.close()
-    print(f"Plot saved to {plot_path}")
-
-
 def expand_data_numpy(data, repeat):
     expanded_data = [np.repeat(sublist, repeat).tolist() for sublist in data]
     return expanded_data
@@ -307,27 +171,31 @@ def expand_data_numpy(data, repeat):
 
 if __name__ == '__main__':
     plot_directory = './save/avg_objects'
+
     metric_index = 1  # 0 for "loss", 1 for "acc"
+
+    """
+    0. Extending
+    """
+    multiplier = 1
+    with open(f'{plot_directory}/nn_cifar_cnn_.pkl', 'rb') as file:
+        data = pickle.load(file)
+        extended_avg_sgd = expand_data_numpy(data[0], multiplier)
+        extended_all_sgd = [expand_data_numpy(
+            d, multiplier) for d in data[1]]
+
+    with open(f'{plot_directory}/nn_cifar_cnn__extended.pkl', 'wb') as f:
+        pickle.dump([extended_avg_sgd, extended_all_sgd], f)
 
     for iid in [1, 0]:
         save_path = './save/combined/iid' if iid == 1 else './save/combined/non_iid'
-
-        multiplier = 1
-        with open(f'{plot_directory}/nn_cifar_cnn_.pkl', 'rb') as file:
-            data = pickle.load(file)
-            extended_avg_sgd = expand_data_numpy(data[0], multiplier)
-            extended_all_sgd = [expand_data_numpy(
-                d, multiplier) for d in data[1]]
-
-        with open(f'{plot_directory}/nn_cifar_cnn__extended.pkl', 'wb') as f:
-            pickle.dump([extended_avg_sgd, extended_all_sgd], f)
 
         """
         1. Performance
         """
         title = 'Convergence'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
             f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
@@ -343,141 +211,103 @@ if __name__ == '__main__':
         print(file_paths)
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            # fig_size=(4, 3.5), x_max=200, y_min=0.425, y_max=0.725,
-            fig_size=(4, 3.5), x_max=200,
-            locs=dict(loc='lower center', ncol=2),
-            highlight=True)
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.0,
+            # y_max=0.725,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(loc='lower right', ncol=2),
+            highlight=True
+        )
 
-        """Magnifying"""
-        title = 'Convergence_Magnifying'
+        """
+        2. Staleness
+        - FRAIN (slerp) : 16
+        # - FRAIN (lerp)  : 16
+        - BRAIN         : 16
+        - FedAsync      : 16
+
+        LERP vs SLERP in stale env.
+        LERP: same as BRAIN
+        """
+        title = f'Staleness'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
-            f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
-            f'{plot_directory}/nn_cifar_cnn__extended.pkl'
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_slerp_constant.pkl',
+            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_lerp_constant.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0.pkl',
+            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S16_A0.6.pkl'
         ]
         labels = [
+            # 'FRAIN (SLERP)',
+            # 'FRAIN (LERP)',
             'FRAIN',
             'BRAIN',
-            'FedAsync',
-            'FedAvg',
-            'SGD'
+            'FedAsync'
         ]
         print(file_paths)
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 2.5), x_max=21,
-            # y_min=0.4, y_max=1.0,
-            locs=None,
-            highlight=True)
-
-        continue  # TODO
-
-        """
-        2. Byzantine (x5)
-        - BRAIN:    0 / 5 / 10 / 11 / 15
-        - FedAsync: 0 / 5 / 10 / 11 / 15
-        - FedAvg:   0 / 5 / 10 / 11 / 15
-        """
-        for b, th in zip([0, 5, 10, 11, 15], [0.0, 0.2, 0.2, 0.2, 0.2]):
-            title = f'Byzantine_{b}'
-            file_paths = [
-                f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{b}_SZ0_D0.55_W4_S4_TH{th}.pkl',
-                f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{b}_S4_A0.6.pkl',
-                f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{b}.pkl'
-            ]
-            labels = [
-                'BRAIN',
-                'FedAsync',
-                'FedAvg'
-            ]
-            # plot_comparison_with_broken_y_axis_and_different_sizes(
-            print(file_paths)
-            plot_comparison_from_files_with_padding(
-                file_paths, metric_index, labels, title, save_path,
-                fig_size=(4, 3.5), x_max=200,
-                # y_min=0.075, y_max=1.0,
-                locs=dict(
-                    loc='lower right',
-                    bbox_to_anchor=(1.0, 0.2)),
-                highlight=True)
-            # break_point_start=0.225, break_point_end=0.735,
-            # top_subplot_size_ratio=7, bottom_subplot_size_ratio=4)
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.0,
+            # y_max=0.725,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(loc='lower right', ncol=1),
+            highlight=True
+        )
 
         """
-        3. Threshold
-        - 0.0 / 0.2 / 0.3 / 0.4 / 0.5 / 0.6
+        3. Byzantine
+        - FRAIN :    Nullifiers=10
+        - BRAIN :    Nullifiers=10
+        - FedAsync : Nullifiers=10
+        - FedAvg :   Nullifiers=10
         """
-        title = 'Threshold'
+        title = f'Byzantine (Nullifiers=10)'
         file_paths = [
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.3.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.4.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.5.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.6.pkl'
+            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_S4_A0.6.pkl',
+            f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10.pkl'
         ]
         labels = [
-            '0.0',
-            '0.2',
-            '0.3',
-            '0.4',
-            '0.5',
-            '0.6'
+            'FRAIN',
+            'BRAIN',
+            'FedAsync',
+            'FedAvg'
         ]
         print(file_paths)
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            # fig_size=(4, 3.5), x_max=200, y_min=0.025, y_max=0.725,
-            fig_size=(4, 3.5), x_max=200,
-            # y_max=0.8,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.0,
+            # y_max=0.725,
+            # locs=dict(loc='lower center', ncol=2),
             locs=dict(
                 loc='lower right',
-                ncol=2,
-                bbox_to_anchor=(1.0, 0.3)))
+                bbox_to_anchor=(1.0, 0.2),
+                ncol=2
+            ),
+            highlight=True
+        )
 
         """
-        4. Score Byzantine (x2)
-        - Byzantine 0: 0 / 5 / 10 / 11 / 15
-        - Byzantine 5: 0 / 5 / 10 / 11 / 15
-        """
-        # # 0
-        # title = f'Score_Byzantine_@_Z{0}'
-        # file_paths = [
-        #     f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{0}_SZ0_D0.55_W4_S4_TH0.0.pkl',
-        #     f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{0}_SZ5_D1.0_W4_S4_TH0.0.pkl',
-        #     f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{0}_SZ10_D1.0_W4_S4_TH0.0.pkl',
-        #     f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{0}_SZ11_D1.0_W4_S4_TH0.0.pkl',
-        #     f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{0}_SZ15_D1.0_W4_S4_TH0.0.pkl'
-        # ]
-        # labels = [
-        #     '0',
-        #     '5',
-        #     '10',
-        #     '11',
-        #     '15'
-        # ]
-        # plot_comparison_from_files_with_padding(
-        #     # plot_comparison_with_broken_y_axis_and_different_sizes(
-        #     file_paths, metric_index, labels, title, save_path,
-        #     fig_size=(4, 3.5), x_max=200,
-        #     # y_min=0.075, y_max=0.615,
-        #     locs=dict(
-        #         loc='lower right',
-        #         bbox_to_anchor=(1.0, 0.2),
-        #         ncol=2))
-        # # break_point_start=0.225, break_point_end=0.485,
-        # # top_subplot_size_ratio=7, bottom_subplot_size_ratio=4)
+        4. Score Byzantine
+        - 0, 5, 10, 11, 15
 
-        # 5
-        title = f'Score_Byzantine_@_Z{5}'
+        Distruptors (with 5 Nullifiers)
+        """
+        title = f'Byzantine (Distruptors, at Nullifiers=5)'
         file_paths = [
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{5}_SZ0_D0.55_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{5}_SZ5_D1.0_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{5}_SZ10_D1.0_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{5}_SZ11_D1.0_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z{5}_SZ15_D1.0_W4_S4_TH0.2.pkl'
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ11_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ15_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
         ]
         labels = [
             '0',
@@ -487,83 +317,40 @@ if __name__ == '__main__':
             '15'
         ]
         print(file_paths)
-        # plot_comparison_with_broken_y_axis_and_different_sizes(
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.5), x_max=200,
-            # y_min=0.075, y_max=0.615,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.0,
+            # y_max=0.725,
+            # locs=dict(loc='lower center', ncol=2),
             locs=dict(
                 loc='lower right',
-                bbox_to_anchor=(1.0, 0.4),
-                ncol=2))
-        # locs=dict(loc='upper right', ncol=2),
-        # break_point_start=0.225, break_point_end=0.485,
-        # top_subplot_size_rati7=5, bottom_subplot_size_ratio=4)
+                bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=False
+        )
 
         """
-        5. Staleness (X2)
-        - FedAsync: 4 / 8 / 16 / 32 / 64
-        - BRAIN: 4 / 8 / 16 / 32 / 64
-        """
-        title = f'Staleness_FedAsync'
-        file_paths = [
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S8_A0.6.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S16_A0.6.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S32_A0.6.pkl',
-            # f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S64_A0.6.pkl'
-        ]
-        labels = [
-            '4',
-            '8',
-            '16',
-            '32',
-            # '64'
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.5), x_max=200,
-            # y_min=0.075, y_max=0.615,
-            locs=dict(loc='lower right', ncol=2))
+        5-1. FastSync
+        - FRAIN
+        - BRAIN
 
-        title = f'Staleness_BRAIN'
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
+        """
+        title = f'Drift (FRAIN)'
         file_paths = [
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S8_TH0.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S32_TH0.0.pkl',
-            # f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S64_TH0.0.pkl'
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_slerp_constant.pkl',
         ]
         labels = [
-            '4',
-            '8',
-            '16',
-            '32',
-            # '64'
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.5), x_max=200,
-            # y_min=0.075, y_max=0.615,
-            locs=dict(loc='lower right', ncol=2))
-
-        """
-        6. Quorum
-        - Byzantine: 5
-        - Score Byzantine: 10
-        - Diff (Quorum): 0.25 (5) / [0.50 (10)] 0.55 (11) / 0.75 (15) / [0.99 (20)] 1.0 (21)
-        """
-        # TH 0.2
-        title = f'Quorum_TH0.2'
-        file_paths = [
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.25_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.75_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D1.0_W4_S4_TH0.2.pkl'
-        ]
-        labels = [
+            '0',
             '5',
             '11',
             '15',
@@ -572,65 +359,198 @@ if __name__ == '__main__':
         print(file_paths)
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.5), x_max=200,
-            # y_max=0.8,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.575,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
             locs=dict(
                 loc='lower right',
-                bbox_to_anchor=(1.0, 0.4),
-                ncol=2))
-
-        # TH 0.4
-        if iid == 0:
-            title = f'Quorum_TH0.4'
-            file_paths = [
-                f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.25_W4_S4_TH0.4.pkl',
-                f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.4.pkl',
-                f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.75_W4_S4_TH0.4.pkl',
-                f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D1.0_W4_S4_TH0.4.pkl'
-            ]
-            labels = [
-                '5',
-                '11',
-                '15',
-                '21'
-            ]
-            print(file_paths)
-            plot_comparison_from_files_with_padding(
-                file_paths, metric_index, labels, title, save_path,
-                fig_size=(4, 3.5), x_max=200,
-                # y_max=0.8,
-                locs=dict(
-                    loc='lower right',
-                    bbox_to_anchor=(1.0, 0.4),
-                    ncol=2))
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=3
+            ),
+            highlight=False
+        )
 
         """
-        7. Fast Bootstrapping
+        5-2. FastSync
+        - FRAIN
+        - BRAIN
+
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
         """
-        title = 'Drift'
+        title = f'Drift (BRAIN)'
         file_paths = [
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
-            f'{plot_directory}/drift_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5.pkl',
-            f'{plot_directory}/drift_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11.pkl',
-            f'{plot_directory}/drift_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15.pkl',
-            f'{plot_directory}/drift_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21.pkl'
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_lerp_constant.pkl',
         ]
         labels = [
-            # 'BRAIN',
-            # 'Fast (5)'
-            # 'Fast (11)'
-            # 'Fast (15)'
-            # 'Fast (21)'
-            0,
-            5,
-            11,
-            15,
-            21
+            '0',
+            '5',
+            '11',
+            '15',
+            '21'
         ]
         print(file_paths)
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title, save_path,
-            # fig_size=(4, 3.5), x_max=200, y_min=0.425, y_max=0.725,
-            fig_size=(4, 3.5), x_max=200,
-            locs=dict(loc='lower center', ncol=3),
-            highlight=True)
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.575,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=3
+            ),
+            highlight=False
+        )
+
+        """
+        5. FastSync
+        - FRAIN (DR=11)
+        - BRAIN (DR=11)
+
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
+        """
+        title = f'Drift'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant.pkl',
+        ]
+        labels = [
+            'FRAIN',
+            'BRAIN',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.575,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=2
+            ),
+            highlight=True
+        )
+
+        """
+        6. LERP vs SLERP (@ Stale & Drift)
+        - FRAIN (stale=16, drift=11)
+        - BRAIN (stale=16, drift=11)
+
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
+        """
+        title = f'L_vs_SL'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_lerp_constant.pkl',
+        ]
+        labels = [
+            'SLERP',
+            'LERP',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.275,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=True
+        )
+
+        """
+        7-1. alpha
+        - constant
+        - poly
+        - hinge
+
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
+        """
+        title = f'alpha (normal)'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_poly.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_hinge.pkl',
+        ]
+        labels = [
+            'Constant',
+            'Polynomial',
+            'Hinge',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.8,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=False
+        )
+
+        """
+        7-2. alpha in extream env
+        - constant
+        - poly
+        - hinge
+
+        LERP vs SLERP in drifted env.
+        LERP: same as BRAIN
+        """
+        title = f'alpha (extream)'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+        ]
+        labels = [
+            'Constant',
+            'Polynomial',
+            'Hinge',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.25,
+            y_max=0.95,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=False
+        )

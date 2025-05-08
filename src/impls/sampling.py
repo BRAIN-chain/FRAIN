@@ -160,7 +160,7 @@ def cifar_iid(dataset, num_users):
     return dict_users
 
 
-def cifar_noniid(dataset, num_users, alpha=3.0, min_samples=ceil(1024/0.9), min_per_label=100):
+def cifar_noniid(dataset, num_users, alpha=3.0, min_samples=ceil(1024/0.9), min_per_label=512):
     """
     Sample non-I.I.D client data from CIFAR10 dataset
     :param dataset:
