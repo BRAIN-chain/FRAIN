@@ -59,14 +59,14 @@ def make_net(
 
     # 3)
     # Random weights
-    # # Re-init
-    # model.apply(model._init_weights)
-    # if hasattr(model, "post_init"):
-    #     model.post_init()
-    # # save model
-    # save_path = "./src_llm/model_state.pt"
-    # torch.save(model.state_dict(), save_path)
-    # print(f"Saved model state_dict to {save_path}")
+    # Re-init
+    model.apply(model._init_weights)
+    if hasattr(model, "post_init"):
+        model.post_init()
+    # save model
+    save_path = "./src_llm/model_state.pt"
+    torch.save(model.state_dict(), save_path)
+    print(f"Saved model state_dict to {save_path}")
 
     # 3)
     # Load random weights
