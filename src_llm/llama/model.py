@@ -25,11 +25,15 @@ def make_net(
     device: str = "cuda",
     # dtype: torch.dtype = torch.float16,
 ):
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-    # if not tokenizer.pad_token:
-    #     tokenizer.pad_token = tokenizer.eos_token
-    #     # print(f"The tokenizer.pad_token set as a {tokenizer.eos_token}")
-    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        use_fast=True,
+        model_max_length=1024,  # TODO
+    )
+    if not tokenizer.pad_token:
+        tokenizer.pad_token = tokenizer.eos_token
+        print(f"The tokenizer.pad_token set as a {tokenizer.eos_token}")
+    # tokenizer.pad_token = tokenizer.eos_token
 
     # base_model =
     # 1)
