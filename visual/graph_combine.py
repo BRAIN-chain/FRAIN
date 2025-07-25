@@ -70,9 +70,11 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
         trimmed_all_dataset = [run[:min_run_length] for run in all_dataset]
         # shape: (runs, min_run_length)
         all_arr = np.array(trimmed_all_dataset)
+        # print(all_arr.shape)
 
         # per-epoch std
-        std_per_epoch = np.nanstd(all_arr, axis=0)  # shape: (epochs,)
+        # shape: (epochs,)  # TODO
+        std_per_epoch = np.nanstd(all_arr[:, 180:200], axis=0)
         max_std = np.nanmax(std_per_epoch)
         min_std = np.nanmin(std_per_epoch)
         mean_std = np.nanmean(std_per_epoch)
@@ -197,9 +199,9 @@ if __name__ == '__main__':
         """
         title = 'Convergence'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR0_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2.pkl',
+            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S16_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
             f'{plot_directory}/nn_cifar_cnn__extended.pkl'
         ]
@@ -224,54 +226,17 @@ if __name__ == '__main__':
         )
 
         """
-        2. Staleness
-        - FRAIN (slerp) : 16
-        # - FRAIN (lerp)  : 16
-        - BRAIN         : 16
-        - FedAsync      : 16
-
-        LERP vs SLERP in stale env.
-        LERP: same as BRAIN
-        """
-        title = f'Staleness'
-        file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S16_A0.6.pkl'
-        ]
-        labels = [
-            # 'FRAIN (SLERP)',
-            # 'FRAIN (LERP)',
-            'FRAIN',
-            'BRAIN',
-            'FedAsync'
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.0),
-            # fig_size=(4, 3.5),
-            x_max=200,
-            y_min=0.0,
-            # y_max=0.725,
-            # locs=dict(loc='lower center', ncol=2),
-            locs=dict(loc='lower right', ncol=1),
-            highlight=True
-        )
-
-        """
-        3. Byzantine
+        2-1. Byzantine
         - FRAIN :    Nullifiers=10
         - BRAIN :    Nullifiers=10
         - FedAsync : Nullifiers=10
         - FedAvg :   Nullifiers=10
         """
-        title = f'Byzantine (Nullifiers=10)'
+        title = f'Byzantine_Nullifiers_10'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2.pkl',
-            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_S4_A0.6.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S16_TH0.2_DR0_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S16_TH0.2.pkl',
+            f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_S16_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10.pkl'
         ]
         labels = [
@@ -298,25 +263,19 @@ if __name__ == '__main__':
         )
 
         """
-        4. Score Byzantine
+        2-2. Score Byzantine
         - 0, 5, 10, 11, 15
 
         Distruptors (with 5 Nullifiers)
         """
-        title = f'Byzantine (Distruptors, at Nullifiers=5)'
+        title = f'Byzantine_Distruptors_at_Nullifiers_5'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ11_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ15_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S16_TH0.2_DR0_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S16_TH0.2.pkl',
         ]
         labels = [
-            '0',
-            '5',
-            '10',
-            '11',
-            '15'
+            'FRAIN',
+            'BRAIN'
         ]
         print(file_paths)
         plot_comparison_from_files_with_padding(
@@ -332,7 +291,77 @@ if __name__ == '__main__':
                 bbox_to_anchor=(1.0, 0.2),
                 ncol=1
             ),
-            highlight=False
+            highlight=True
+        )
+
+        """
+        3. LERP vs SLERP (@ Stale & Drift)
+        - FRAIN (stale=16, drift=11)
+        - BRAIN (stale=16, drift=11)
+        """
+        title = f'L_vs_SL'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+        ]
+        labels = [
+            'SLERP',
+            'LERP',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.275,
+            y_max=0.925,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=True
+        )
+
+        """
+        4. Staleness Panelty Functions
+        - constant
+        - poly
+        - hinge
+        """
+        title = f'Penalty'
+        file_paths = [
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_hinge_a10.0_b2.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+        ]
+        labels = [
+            'Hinge',
+            # 'Hinge_2',
+            # 'Hinge_4',
+            # 'Hinge_8',
+            'Polynomial',
+            'Constant',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title, save_path,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=200,
+            y_min=0.25,
+            y_max=0.95,
+            # locs=dict(loc='lower center', ncol=2),
+            locs=dict(
+                loc='lower right',
+                # bbox_to_anchor=(1.0, 0.2),
+                ncol=1
+            ),
+            highlight=True
         )
 
         """
@@ -343,13 +372,13 @@ if __name__ == '__main__':
         LERP vs SLERP in drifted env.
         LERP: same as BRAIN
         """
-        title = f'Drift (FRAIN)'
+        title = f'Drift_FRAIN'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR0_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR5_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR15_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR21_slerp_hinge_a10.0_b8.0_c16.0.pkl',
         ]
         labels = [
             '0',
@@ -383,13 +412,15 @@ if __name__ == '__main__':
         LERP vs SLERP in drifted env.
         LERP: same as BRAIN
         """
-        title = f'Drift (BRAIN)'
+        title = f'Drift_BRAIN'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_lerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_lerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2.pkl',
+
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR5_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR15_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR21_lerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             '0',
@@ -425,8 +456,8 @@ if __name__ == '__main__':
         """
         title = f'Drift'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.2_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             'FRAIN',
@@ -447,112 +478,4 @@ if __name__ == '__main__':
                 ncol=2
             ),
             highlight=True
-        )
-
-        """
-        6. LERP vs SLERP (@ Stale & Drift)
-        - FRAIN (stale=16, drift=11)
-        - BRAIN (stale=16, drift=11)
-
-        LERP vs SLERP in drifted env.
-        LERP: same as BRAIN
-        """
-        title = f'L_vs_SL'
-        file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
-        ]
-        labels = [
-            'SLERP',
-            'LERP',
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.0),
-            # fig_size=(4, 3.5),
-            x_max=200,
-            y_min=0.275,
-            y_max=0.925,
-            # locs=dict(loc='lower center', ncol=2),
-            locs=dict(
-                loc='lower right',
-                # bbox_to_anchor=(1.0, 0.2),
-                ncol=1
-            ),
-            highlight=True
-        )
-
-        """
-        7-1. alpha
-        - constant
-        - poly
-        - hinge
-
-        LERP vs SLERP in drifted env.
-        LERP: same as BRAIN
-        """
-        title = f'alpha (normal)'
-        file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_poly_a0.5_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_hinge_a10.0_b2.0_c4.0.pkl',
-        ]
-        labels = [
-            'Constant',
-            'Polynomial',
-            'Hinge',
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.0),
-            # fig_size=(4, 3.5),
-            x_max=200,
-            y_min=0.8,
-            y_max=0.925,
-            # locs=dict(loc='lower center', ncol=2),
-            locs=dict(
-                loc='lower right',
-                # bbox_to_anchor=(1.0, 0.2),
-                ncol=1
-            ),
-            highlight=False
-        )
-
-        """
-        7-2. alpha in extream env
-        - constant
-        - poly
-        - hinge
-
-        LERP vs SLERP in drifted env.
-        LERP: same as BRAIN
-        """
-        title = f'alpha (extream)'
-        file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
-        ]
-        labels = [
-            'Constant',
-            'Polynomial',
-            'Hinge',
-        ]
-        print(file_paths)
-        plot_comparison_from_files_with_padding(
-            file_paths, metric_index, labels, title, save_path,
-            fig_size=(4, 3.0),
-            # fig_size=(4, 3.5),
-            x_max=200,
-            y_min=0.25,
-            y_max=0.95,
-            # locs=dict(loc='lower center', ncol=2),
-            locs=dict(
-                loc='lower right',
-                # bbox_to_anchor=(1.0, 0.2),
-                ncol=1
-            ),
-            highlight=False
         )

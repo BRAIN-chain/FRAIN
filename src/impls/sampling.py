@@ -160,77 +160,82 @@ def cifar_iid(dataset, num_users):
     return dict_users
 
 
-def cifar_noniid(dataset, num_users, alpha=3.0, min_samples=ceil(1024/0.9), min_per_label=512):
-    """
-    Sample non-I.I.D client data from CIFAR10 dataset
-    :param dataset:
-    :param num_users:
-    :param alpha: shape parameter of the Pareto distribution. Default is 3.0, 
-                a common choice to simulate imbalance. Lower values lead to 
-                higher imbalance among users.
-    :param min_samples: minimum number of samples each user should receive
-    :param min_per_label: minimum number of samples per (node, label)
-    :return:
-    """
-    num_labels = 10  # CIFAR-10 has 10 labels
+def cifar_noniid(dataset, num_users, alpha=3.0, min_samples=ceil(1024/0.9), min_per_label=128):
+    num_labels = 10                  # CIFAR‑10
+    N = len(dataset)
 
-    # Ensure the dataset can support the min_samples for each user
-    if (num_users * min_samples > len(dataset)) and (num_users * num_labels > len(dataset)):
-        raise ValueError(
-            "The total min_samples for all users exceed the total number of items in the dataset.")
+    if num_users * min_samples > N:
+        raise ValueError("min_samples * num_users > len(dataset)")
+    for lbl in range(num_labels):
+        if min_per_label * num_users > (np.array(dataset.targets) == lbl).sum():
+            raise ValueError(
+                f"Label {lbl} cannot meet the condition min_per_label={min_per_label}"
+            )
 
-    # Group data by labels
-    label_to_indices = {
-        i: np.where(np.array(dataset.targets) == i)[0] for i in range(num_labels)}
+    label_to_idx = {
+        lbl: np.where(np.array(dataset.targets) == lbl)[0]
+        for lbl in range(num_labels)
+    }
+    user_data = {u: [] for u in range(num_users)}
 
-    # Initialize user data distribution
-    user_data = {i: [] for i in range(num_users)}
+    for lbl, idx in label_to_idx.items():
+        np.random.shuffle(idx)
 
-    for label, indices in label_to_indices.items():
-        np.random.shuffle(indices)
-        # Split label indices among users based on Pareto distribution
-        samples_pareto = np.random.pareto(alpha, num_users)
-        samples_pareto_normalized = samples_pareto / \
-            sum(samples_pareto) * (len(indices) - min_per_label * num_users)
-        samples_per_user = [int(np.round(num))
-                            for num in samples_pareto_normalized]
+        base = np.full(num_users, min_per_label, dtype=int)
+        leftover = len(idx) - base.sum()
 
-        # Adjust last to match exactly
-        samples_per_user[-1] = len(indices) - sum(samples_per_user[:-1])
-        samples_per_user = np.array(samples_per_user) + min_per_label
+        if leftover > 0:
+            p = np.random.pareto(alpha, num_users)
+            p /= p.sum()
+            extra = np.random.multinomial(leftover, p)
+            alloc = base + extra
+        else:
+            alloc = base
 
-        # Distribute indices among users
         start = 0
-        for user, num_samples in enumerate(samples_per_user):
-            user_data[user].extend(indices[start:start + num_samples])
-            start += num_samples
+        for u, n in enumerate(alloc):
+            user_data[u].extend(idx[start:start + n])
+            start += n
 
-    # Enforcing minimum samples by redistributing excess samples from users who have more than minimum
-    redistribute_indices = []
-    for user, indices in user_data.items():
-        if len(indices) < min_samples:
-            needed = min_samples - len(indices)
-            for donor_user, donor_indices in user_data.items():
-                if len(donor_indices) > min_samples + needed:
-                    transfer_indices = donor_indices[-needed:]
-                    donor_indices = donor_indices[:-needed]
-                    user_data[donor_user] = donor_indices
-                    redistribute_indices.extend(transfer_indices)
+    for u in range(num_users):
+        deficit = min_samples - len(user_data[u])
+        if deficit <= 0:
+            continue
+
+        for donor in range(num_users):
+            if len(user_data[donor]) <= min_samples:
+                continue
+            donor_labels, counts = np.unique(
+                [dataset.targets[i] for i in user_data[donor]], return_counts=True
+            )
+            for lbl, cnt in zip(donor_labels, counts):
+                excess = cnt - min_per_label
+                if excess <= 0:
+                    continue
+                take = min(excess, deficit)
+                to_move = [
+                    i for i in user_data[donor]
+                    if dataset.targets[i] == lbl
+                ][:take]
+                for i in to_move:
+                    user_data[donor].remove(i)
+                user_data[u].extend(to_move)
+                deficit -= take
+                if deficit == 0:
                     break
+            if deficit == 0:
+                break
+        if deficit > 0:
+            raise RuntimeError("Cannot meet min_samples condition")
 
-    # Distribute any collected indices for redistribution
-    np.random.shuffle(redistribute_indices)
-    for user, indices in user_data.items():
-        if len(indices) < min_samples:
-            needed = min_samples - len(indices)
-            transfer_indices = redistribute_indices[:needed]
-            redistribute_indices = redistribute_indices[needed:]
-            user_data[user].extend(transfer_indices)
+    # Validation
+    for u in range(num_users):
+        assert len(user_data[u]) >= min_samples
+        lbls, cnts = np.unique([dataset.targets[i] for i in user_data[u]],
+                               return_counts=True)
+        assert all(c >= min_per_label for c in cnts)
 
-    # Convert lists to sets for consistency with the previous function's output
-    user_data = {user: set(indices) for user, indices in user_data.items()}
-
-    return user_data
+    return {u: set(idx) for u, idx in user_data.items()}
 
 
 if __name__ == '__main__':
