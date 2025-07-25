@@ -187,7 +187,9 @@ if __name__ == '__main__':
     with open(f'{plot_directory}/nn_cifar_cnn__extended.pkl', 'wb') as f:
         pickle.dump([extended_avg_sgd, extended_all_sgd], f)
 
-    for iid in [1, 0]:
+    # TODO
+    # for iid in [1, 0]:
+    for iid in [0]:
         save_path = './save/combined/iid' if iid == 1 else './save/combined/non_iid'
 
         """
@@ -195,7 +197,7 @@ if __name__ == '__main__':
         """
         title = 'Convergence'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
             f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0.pkl',
@@ -233,8 +235,8 @@ if __name__ == '__main__':
         """
         title = f'Staleness'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_slerp_constant.pkl',
-            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            # f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0.pkl',
             f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_S16_A0.6.pkl'
         ]
@@ -267,7 +269,7 @@ if __name__ == '__main__':
         """
         title = f'Byzantine (Nullifiers=10)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
             f'{plot_directory}/brain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_SZ0_D0.55_W4_S4_TH0.2.pkl',
             f'{plot_directory}/fedasync_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z10.pkl'
@@ -303,11 +305,11 @@ if __name__ == '__main__':
         """
         title = f'Byzantine (Distruptors, at Nullifiers=5)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ11_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ15_D0.55_W4_S4_TH0.2_DR0_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ10_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ11_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z5_SZ15_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             '0',
@@ -343,11 +345,11 @@ if __name__ == '__main__':
         """
         title = f'Drift (FRAIN)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_slerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             '0',
@@ -383,11 +385,11 @@ if __name__ == '__main__':
         """
         title = f'Drift (BRAIN)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_lerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_lerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_lerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR5_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR15_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR21_lerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             '0',
@@ -423,8 +425,8 @@ if __name__ == '__main__':
         """
         title = f'Drift'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             'FRAIN',
@@ -457,8 +459,8 @@ if __name__ == '__main__':
         """
         title = f'L_vs_SL'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_lerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
         ]
         labels = [
             'SLERP',
@@ -492,9 +494,9 @@ if __name__ == '__main__':
         """
         title = f'alpha (normal)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_poly.pkl',
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_hinge.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_poly_a0.5_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_hinge_a10.0_b2.0_c4.0.pkl',
         ]
         labels = [
             'Constant',
@@ -529,7 +531,7 @@ if __name__ == '__main__':
         """
         title = f'alpha (extream)'
         file_paths = [
-            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant.pkl',
+            f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
             f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
             f'{plot_directory}/frain_cifar_cnn_C0.1_iid{iid}_E9.9_B1024_Z0_SZ0_D0.55_W4_S16_TH0.0_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
         ]

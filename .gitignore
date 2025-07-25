@@ -3,10 +3,13 @@ __pycache__
 
 .DS_Store
 
-save
 data
-logs
 results
+
+save
+logs
+save_llm
+logs_llm
 
 /simul
 /simul_heatmap

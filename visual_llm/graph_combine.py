@@ -41,7 +41,7 @@ markers_palette = [
 
 
 def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, title, save_path,
-                                            fig_size=(4, 4), x_max=None, x_mul=20, y_min=0, y_max=None,
+                                            fig_size=(4, 4), x_max=None, x_mul=4, y_min=0, y_max=None,
                                             locs=dict(loc='upper right'),
                                             highlight=False, arrange=None):
 
@@ -183,7 +183,7 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
 
 
 def plot_comparison_from_files_with_padding_break(file_paths, metric_index, labels, title, save_path,
-                                                  fig_size=(4, 4), x_max=None, x_mul=20, y_min=1e4, y_max=1e50,
+                                                  fig_size=(4, 4), x_max=None, x_mul=4, y_min=1e4, y_max=1e50,
                                                   locs=dict(loc='upper right'),
                                                   highlight=False, arrange=None,
                                                   y_break_end=None, y_break_start=None, height_ratios=(1, 2)):
@@ -475,7 +475,9 @@ if __name__ == '__main__':
     with open(f'{plot_directory}/nn__extended.pkl', 'wb') as f:
         pickle.dump([extended_avg_sgd, extended_all_sgd], f)
 
-    for iid in [1, 0]:
+    # TODO
+    # for iid in [1, 0]:
+    for iid in [0]:
         save_path = './save_llm/combined/id' if iid == 1 else './save_llm/combined/non_id'
 
         """
@@ -501,7 +503,7 @@ if __name__ == '__main__':
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title,
             save_path,
-            x_mul=2,  # *16
+            x_mul=4,  # *16
             fig_size=(4, 3.0),
             # fig_size=(4, 3.5),
             x_max=25,  # 30
@@ -511,8 +513,6 @@ if __name__ == '__main__':
             highlight=True,
             arrange=2
         )
-
-        continue
 
         """
         1. Byzantine
@@ -534,7 +534,7 @@ if __name__ == '__main__':
         plot_comparison_from_files_with_padding_break(
             file_paths, metric_index, labels, title,
             save_path,
-            x_mul=2,
+            x_mul=4,
             fig_size=(4, 3.0),
             # fig_size=(4, 3.5),
             x_max=25,  # 30
@@ -554,7 +554,7 @@ if __name__ == '__main__':
         # plot_comparison_from_files_with_padding(
         #     file_paths, metric_index, labels, title,
         #     save_path,
-        #     x_mul=2,
+        #     x_mul=4,
         #     fig_size=(4, 1.5),
         #     # fig_size=(4.5, 3.5),
         #     x_max=25,  # 30
