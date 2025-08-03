@@ -11,6 +11,11 @@ $ chmod +x *.sh
 # Run
 
 ```bash
+$ eval.sh 0
+$ llm_eval.sh 0
+```
+
+```bash
 # SGD (single-thread)
 $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/SGD.py --model=cnn --dataset=cifar --epochs=200 --verbose=0 --local_bs=50
 

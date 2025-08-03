@@ -59,7 +59,7 @@ def args_parser():
     #
     parser.add_argument('--epochs', type=int, default=25,
                         help="number of rounds of training")
-    parser.add_argument('--local_ep', type=float, default=1.9,
+    parser.add_argument('--local_ep', type=int, default=1,
                         help="the number of local epochs: E")
     parser.add_argument('--local_bs', type=int, default=16,
                         help="local batch size: B")
