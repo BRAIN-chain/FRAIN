@@ -40,8 +40,11 @@ markers_palette = [
 ]
 
 
+WINDOW = 2
+
+
 def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, title, save_path,
-                                            fig_size=(4, 4), x_max=None, x_mul=4, y_min=0, y_max=None,
+                                            fig_size=(4, 4), x_max=None, x_mul=2, y_min=0, y_max=None,
                                             locs=dict(loc='upper right'),
                                             highlight=False, arrange=None):
 
@@ -78,7 +81,9 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
         all_arr = np.array(all_dataset)  # shape: (runs, epochs)
 
         # per-epoch std
-        std_per_epoch = np.std(all_arr, axis=0)  # shape: (epochs,)
+        # shape: (epochs,)
+        # TODO
+        std_per_epoch = np.std(all_arr[:, 20:25], axis=0)
         max_std = np.max(std_per_epoch)
         min_std = np.min(std_per_epoch)
         mean_std = np.mean(std_per_epoch)
@@ -105,19 +110,41 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
         marker_color = markers_palette[i]
 
         # Plot individual data points using Seaborn scatterplot for each data set
-        for data_set in all_dataset:
+        for didx, data_set in enumerate(all_dataset):
             data_set = data_set if x_max == None else data_set[:x_max]
-            sns.scatterplot(x=np.arange(len(data_set)),
-                            y=data_set, alpha=0.1, s=20, color=color, legend=False)
+            x = np.arange(len(data_set))
+            y = data_set
+            sns.scatterplot(x=x, y=y, alpha=0.1, s=20,
+                            color=color, legend=False)
+
+            # if i == 0:
+            #     for xi, yi in zip(x, y):
+            #         plt.text(
+            #             xi, yi,
+            #             str(didx),
+            #             fontsize=4,
+            #             ha='center',
+            #             va='bottom',
+            #             alpha=0.5
+            #         )
 
         # Using pandas to handle NaNs gracefully in lineplot
         padded_avg_data = padded_avg_data if x_max == None else padded_avg_data[:x_max]
+
+        # window-based avg
+        if WINDOW != 0:
+            padded_avg_data = (
+                pd.Series(padded_avg_data)
+                .rolling(window=WINDOW, center=True, min_periods=1)
+                .mean()
+                .to_numpy()
+            )
+
         df = pd.DataFrame(
             {'Epoch': x_axis, 'Value': padded_avg_data, 'Group': label})
         sns.lineplot(x='Epoch', y='Value', data=df, style='Group', zorder=2,
                      dashes=False,
-                     #  linewidth=0.75,
-                     linewidth=1.5 if i == 0 and highlight else 0.75,
+                     linewidth=2.0 if i == 0 and highlight else 1.0,
                      alpha=1.0 if i == 0 and highlight else 0.6, color=marker_color)
         #  markers=marker, markersize=4, markeredgewidth=0.5)
 
@@ -183,7 +210,7 @@ def plot_comparison_from_files_with_padding(file_paths, metric_index, labels, ti
 
 
 def plot_comparison_from_files_with_padding_break(file_paths, metric_index, labels, title, save_path,
-                                                  fig_size=(4, 4), x_max=None, x_mul=4, y_min=1e4, y_max=1e50,
+                                                  fig_size=(4, 4), x_max=None, x_mul=2, y_min=1e4, y_max=1e50,
                                                   locs=dict(loc='upper right'),
                                                   highlight=False, arrange=None,
                                                   y_break_end=None, y_break_start=None, height_ratios=(1, 2)):
@@ -327,6 +354,15 @@ def plot_comparison_from_files_with_padding_break(file_paths, metric_index, labe
                 sns.scatterplot(x=np.arange(len(d)), y=d, alpha=0.1, s=20,
                                 color=color, legend=False, ax=ax)
 
+            # window-based avg
+            if WINDOW != 0:
+                padded_avg = (
+                    pd.Series(padded_avg)
+                    .rolling(window=WINDOW, center=True, min_periods=1)
+                    .mean()
+                    .to_numpy()
+                )
+
             # 평균 라인
             df = pd.DataFrame({
                 'Epoch': x_axis,
@@ -336,7 +372,7 @@ def plot_comparison_from_files_with_padding_break(file_paths, metric_index, labe
             sns.lineplot(
                 x='Epoch', y='Value', data=df, style='Group',
                 dashes=False, zorder=2,
-                linewidth=1.5 if i == 0 and highlight else 0.75,
+                linewidth=2.0 if i == 0 and highlight else 1.0,
                 alpha=1.0 if i == 0 and highlight else 0.6,
                 color=marker_color, ax=ax
             )
@@ -478,15 +514,16 @@ if __name__ == '__main__':
     # TODO
     # for iid in [1, 0]:
     for iid in [0]:
-        save_path = './save_llm/combined/id' if iid == 1 else './save_llm/combined/non_id'
+        save_path = './save_llm/combined/id' if iid == 1 else './save_llm/combined/non_iid'
 
         """
         1. Performance
         """
+        print("\nConvergence")
         title = f"Convergence"
         file_paths = [
-            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.0_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
-            f'{plot_directory}/brain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/brain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2.pkl',
             f'{plot_directory}/fedasync_C0.1_iid{iid}_E1_B16_Z0_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_C0.1_iid{iid}_E1_B16_Z0.pkl',
             f'{plot_directory}/nn__extended.pkl'
@@ -503,23 +540,28 @@ if __name__ == '__main__':
         plot_comparison_from_files_with_padding(
             file_paths, metric_index, labels, title,
             save_path,
-            x_mul=4,  # *16
+            x_mul=2,  # *16
             fig_size=(4, 3.0),
             # fig_size=(4, 3.5),
             x_max=25,  # 30
-            y_min=0.5e3,
-            y_max=1.0e5,
-            locs=dict(loc='lower center', ncol=2),
+            y_min=0.5e4,
+            y_max=1.0e6,
+            locs=dict(loc='upper right', ncol=2),
             highlight=True,
             arrange=2
         )
 
         """
-        1. Byzantine
+        2-1. Byzantine
+        - FRAIN :    Randomizer=10
+        - BRAIN :    Randomizer=10
+        - FedAsync : Randomizer=10
+        - FedAvg :   Randomizer=10
         """
-        title = f"Randomizer"
+        print("\nRandomizer")
+        title = f"Byzantine_Randomizer_10"
         file_paths = [
-            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z10_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_hinge_a10.0_b4.0_c16.0.pkl',
             f'{plot_directory}/brain_C0.1_iid{iid}_E1_B16_Z10_SZ0_D0.55_W4_S4_TH0.2.pkl',
             f'{plot_directory}/fedasync_C0.1_iid{iid}_E1_B16_Z10_S4_A0.6.pkl',
             f'{plot_directory}/fedavg_C0.1_iid{iid}_E1_B16_Z10.pkl',
@@ -528,22 +570,22 @@ if __name__ == '__main__':
             'FRAIN',
             'BRAIN',
             'FedAsync',
-            'FedAvg',
+            'FedAvg'
         ]
         print(file_paths)
         plot_comparison_from_files_with_padding_break(
             file_paths, metric_index, labels, title,
             save_path,
-            x_mul=4,
+            x_mul=2,
             fig_size=(4, 3.0),
             # fig_size=(4, 3.5),
             x_max=25,  # 30
-            y_min=0.5e4,
+            y_min=1.0e3,
             y_max=1.0e60,
             locs=dict(loc='lower center', ncol=2),
             highlight=True,
-            arrange=1,
-            y_break_end=1.0e5,
+            arrange=2,
+            y_break_end=0.5e6,
             y_break_start=1.0e10,
             # height_ratios=(1, 2)
             height_ratios=(5, 11)
@@ -554,7 +596,7 @@ if __name__ == '__main__':
         # plot_comparison_from_files_with_padding(
         #     file_paths, metric_index, labels, title,
         #     save_path,
-        #     x_mul=4,
+        #     x_mul=2,
         #     fig_size=(4, 1.5),
         #     # fig_size=(4.5, 3.5),
         #     x_max=25,  # 30
@@ -562,5 +604,273 @@ if __name__ == '__main__':
         #     y_max=1.0e5,
         #     locs=None,
         #     highlight=True,
-        #     arrange=1
+        #     arrange=2
         # )
+
+        """
+        2-2. Score Byzantine
+        - 0, 5, 10, 11, 15
+
+        Distruptors (with 5 Randomizer)
+        """
+        print("\nByzantine_Distruptors_at_Randomizers_5")
+        title = f"Byzantine_Distruptors_at_Randomizers_5"
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/brain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2.pkl',
+        ]
+        labels = [
+            'FRAIN',
+            'BRAIN',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=0.5e4,
+            y_max=0.5e6,
+            locs=dict(loc='lower center', ncol=2),
+            highlight=True,
+            arrange=2,
+        )
+
+        """
+        3. LERP vs SLERP (@ Stale & Drift)
+        - FRAIN (SLERP, hinge)
+        - FRAIN (LERP,  hinge)
+        """
+        print("\nL_vs_SL")
+        title = f"L_vs_SL"
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_lerp_hinge_a10.0_b4.0_c16.0.pkl',
+        ]
+        labels = [
+            'SLERP',
+            'LERP',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=1.0e4,
+            y_max=0.5e6,
+            locs=dict(loc='upper right', ncol=1),
+            highlight=True,
+            arrange=2
+        )
+
+        # """
+        # 4-1. Staleness Panelty Functions
+        # - constant
+        # - poly
+        # - hinge
+        # """
+        # title = f'Penalty_Functions'
+        # file_paths = [
+        #     f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b2.0_c16.0.pkl',
+        #     f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+        #     f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b8.0_c16.0.pkl',
+        #     f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
+        #     f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+        # ]
+        # labels = [
+        #     'Hinge_2',
+        #     'Hinge_4',
+        #     'Hinge_8',
+        #     'Polynomial',
+        #     'Constant',
+        # ]
+        # print(file_paths)
+        # plot_comparison_from_files_with_padding(
+        #     file_paths, metric_index, labels, title,
+        #     save_path,
+        #     x_mul=2,  # *16
+        #     fig_size=(4, 3.0),
+        #     # fig_size=(4, 3.5),
+        #     x_max=25,  # 30
+        #     y_min=0.5e3,
+        #     y_max=1.0e7,
+        #     locs=dict(loc='lower center', ncol=2),
+        #     highlight=False,
+        #     arrange=5
+        # )
+
+        """
+        4. Staleness Panelty Functions
+        - constant
+        - poly
+        - hinge
+        """
+        print("\nPenalty")
+        title = f'Penalty'
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_poly_a0.5_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_constant_a0.0_b0.0_c4.0.pkl',
+        ]
+        labels = [
+            'Hinge',
+            'Polynomial',
+            'Constant',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=1.0e4,
+            y_max=0.5e6,
+            locs=dict(loc='upper right', ncol=1),
+            highlight=True,
+            arrange=3
+        )
+
+        """
+        5-1. FastSync
+        - FRAIN
+        """
+        print("\nDrift_FRAIN")
+        title = f'Drift_FRAIN'
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR0_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR5_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR15_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR21_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+        ]
+        labels = [
+            '0',
+            '5',
+            '11',
+            '15',
+            '21'
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=0.5e3,
+            y_max=1.0e6,
+            locs=dict(loc='lower center', ncol=3),
+            highlight=False,
+            arrange=5
+        )
+
+        """
+        5-2. FastSync
+        - BRAIN
+        """
+        print("\nDrift_BRAIN")
+        title = f'Drift_BRAIN'
+        file_paths = [
+            # f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR0_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/brain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2.pkl',
+
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR5_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR15_lerp_constant_a0.0_b0.0_c4.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR21_lerp_constant_a0.0_b0.0_c4.0.pkl',
+        ]
+        labels = [
+            '0',
+            '5',
+            '11',
+            '15',
+            '21'
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=0.5e3,
+            y_max=1.0e6,
+            locs=dict(loc='lower center', ncol=3),
+            highlight=False,
+            arrange=5
+        )
+
+        """
+        5. FastSync
+        - FRAIN (DR=11)
+        - BRAIN (DR=11)
+        """
+        print("\nDrift")
+        title = f'Drift'
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z0_SZ0_D0.55_W4_S4_TH0.2_DR11_lerp_constant_a0.0_b0.0_c4.0.pkl',
+        ]
+        labels = [
+            'FRAIN',
+            'BRAIN',
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=1.0e4,
+            y_max=1.0e6,
+            locs=dict(loc='lower center', ncol=3),
+            highlight=True,
+            arrange=5
+        )
+
+        """
+        5-3. FastSync
+        - FRAIN (DR 0 to 21)
+        - Distruptor 5, Randomizer 5
+        """
+        print("\nDrift_Byzantines")
+        title = f'Drift_Byzantines'
+        file_paths = [
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR0_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR5_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR11_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR15_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+            f'{plot_directory}/frain_C0.1_iid{iid}_E1_B16_Z5_SZ5_D0.55_W4_S4_TH0.2_DR21_slerp_hinge_a10.0_b4.0_c16.0.pkl',
+        ]
+        labels = [
+            '0',
+            '5',
+            '11',
+            '15',
+            '21'
+        ]
+        print(file_paths)
+        plot_comparison_from_files_with_padding(
+            file_paths, metric_index, labels, title,
+            save_path,
+            x_mul=2,  # *16
+            fig_size=(4, 3.0),
+            # fig_size=(4, 3.5),
+            x_max=25,  # 30
+            y_min=0.5e4,
+            y_max=1.0e6,
+            locs=dict(loc='upper right', ncol=2),
+            highlight=True,
+            arrange=5
+        )
