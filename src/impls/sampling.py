@@ -160,12 +160,38 @@ def cifar_iid(dataset, num_users):
     return dict_users
 
 
-def cifar_noniid(dataset, num_users, alpha=3.0, min_samples=ceil(1024/0.9), min_per_label=128):
+def cifar_noniid(
+    dataset,
+    num_users,
+    alpha=3.0,
+
+    # TODO
+    
+    # # 101
+    # min_samples=ceil(256/0.9),
+    # min_per_label=32
+
+    # # 51
+    # min_samples=ceil(512/0.9),
+    # min_per_label=64
+
+    # 21
+    min_samples=ceil(1024/0.9),
+    min_per_label=128
+
+    # # 11
+    # min_samples=ceil(2048/0.9),
+    # min_per_label=256
+
+    # # 5
+    # min_samples=ceil(4096/0.9),
+    # min_per_label=512
+):
     num_labels = 10                  # CIFAR‑10
     N = len(dataset)
 
     if num_users * min_samples > N:
-        raise ValueError("min_samples * num_users > len(dataset)")
+        raise ValueError(f"min_samples * num_users > len(dataset) ({len(dataset)})")
     for lbl in range(num_labels):
         if min_per_label * num_users > (np.array(dataset.targets) == lbl).sum():
             raise ValueError(
