@@ -1,9 +1,7 @@
-import time
 import copy
-from math import ceil
+# from math import ceil
 
 import torch
-from torchvision import datasets, transforms
 
 import numpy as np
 
@@ -102,10 +100,16 @@ def pareto_splits(dataset_size: int,
     return splits
 
 
+def _to_cpu(w):
+    return {k: v.to("cpu") for k, v in w.items()}
+
+
 def average_weights(w):
     """
     Returns the average of the weights.
     """
+    w = [_to_cpu(wi) for wi in w]
+
     w_avg = copy.deepcopy(w[0])
     for key in w_avg.keys():
         # if "lora" in key:
@@ -121,7 +125,9 @@ def weighted_average_weights(w, a):
     """
     Returns the weighted average of the weights.
     """
-    denom = sum(a)
+    w = [_to_cpu(wi) for wi in w]
+
+    denom = max(sum(a), 1e-8)
     w_avg = copy.deepcopy(w[0])
     for key in w_avg.keys():
         # if "lora" in key:
@@ -136,6 +142,9 @@ def compose_weight(w0, w1, a=0.6):  # LERP
     """
     Returns the average of the weights.
     """
+    w0 = _to_cpu(w0)
+    w1 = _to_cpu(w1)
+
     w_t = copy.deepcopy(w0)
     for key in w_t.keys():
         # if "lora" in key:
@@ -151,6 +160,9 @@ def compose_weight_slerp(w0, w1, a=0.6, DOT_THRESHOLD=0.9995, eps=1e-8):
     - https://gist.github.com/dvschultz/3af50c40df002da3b751efab1daddf2c
     - https://github.com/arcee-ai/mergekit/blob/main/mergekit/merge_methods/slerp.py#L100
     """
+    w0 = _to_cpu(w0)
+    w1 = _to_cpu(w1)
+
     w_t = copy.deepcopy(w0)
 
     def normalize(v, eps):

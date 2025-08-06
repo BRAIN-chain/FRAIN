@@ -78,6 +78,8 @@ def args_parser():
     # to a specific GPU ID. Default set to use CPU.")
     parser.add_argument('--iid', type=int, default=1,
                         help='Default set to IID. Set to 0 for non-IID (and unequal).')
+    parser.add_argument("--min_per_label", type=int, default=128,
+                        help="Pareto Split min_per_label")
     parser.add_argument('--verbose', type=int, default=1, help='verbose')
     # parser.add_argument('--seed', type=int, default=1, help='random seed')
 

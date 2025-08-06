@@ -43,7 +43,7 @@ if __name__ == '__main__':
             36718,  # TODO: wikitext2 (args)
             args.num_users - args.byzantines,
             alpha=3.0,
-            min_per_label=128,
+            min_per_label=args.min_per_label,
             seed=int(time.time() * 1000) & (2**32 - 1)
         )
     # for user_idx, (skip, take) in enumerate(user_groups):
@@ -59,6 +59,7 @@ if __name__ == '__main__':
 
     # copy weights
     global_weights = global_model.state_dict()
+    global_weights = {k: v.cpu() for k, v in global_model.state_dict().items()}
 
     # TRAIN
 
@@ -85,6 +86,8 @@ if __name__ == '__main__':
 
     for epoch in range(args.epochs + args.stale):
         print("[INFO]", epoch)
+        global_model.to('cpu')
+        drifted_model.to('cpu')
 
         if (len(cache.cache) == 0) and (epoch >= args.epochs):
             break
@@ -104,14 +107,14 @@ if __name__ == '__main__':
                 for idx in idxs_users:
                     if idx >= args.byzantines:
                         local_model = LocalUpdate(
-                            args=args, tokenizer=tokenizer)
+                            args=args, tokenizer=tokenizer, gpu=torch.cuda.current_device())
                         # trainset set
                         (skip_num, take_num) = user_groups[idx-args.byzantines]
                         local_model.set_dataset_train(
                             skip_num, take_num, seed=int(time.time() * 1000) & (2**32 - 1))
                     else:
                         local_model = ByzantineLocalUpdate(
-                            args=args, tokenizer=tokenizer)
+                            args=args, tokenizer=tokenizer, gpu=torch.cuda.current_device())
 
                     if args.drift == 0:  # no fast sync (same as BRAIN)
                         w, avg_train_loss = local_model.update_weights(
@@ -139,7 +142,13 @@ if __name__ == '__main__':
                         )
 
                     # local_weights.append(copy.deepcopy(w))
-                    cache.add_item_with_random_counter(copy.deepcopy(w))
+
+                    # if next(iter(w.values())).is_cuda:
+                    #     w = {k: v.cpu() for k, v in w.items()}
+                    cache.add_item_with_random_counter(
+                        w
+                        # copy.deepcopy(w)
+                    )
 
             # use counter for staleness
             # - return list of the original counters (counter == staleness)
@@ -163,15 +172,22 @@ if __name__ == '__main__':
                     for idx in committee:
                         # BRAIN: `score_byzantines` submit random score
                         if idx >= args.score_byzantines:
-                            local_model = LocalUpdate(
-                                args=args, tokenizer=tokenizer)
-                            temp_model = copy.deepcopy(global_model)
-                            temp_model.load_state_dict(local_weight)
-                            temp_model.eval()
-                            val_loss = local_model.inference(model=temp_model)
-                            # scale loss (use exp, e^-ax)
-                            local_eval_loss.append(
-                                exp_decay(val_loss, alpha=0.1))  # TODO: alpha=0.05?
+                            with torch.no_grad():
+                                local_model = LocalUpdate(
+                                    args=args, tokenizer=tokenizer, gpu=torch.cuda.current_device())
+                                temp_model = copy.deepcopy(
+                                    global_model).to('cpu')
+                                temp_model.load_state_dict(local_weight)
+                                temp_model = temp_model.to('cuda')
+                                temp_model.eval()
+                                val_loss = local_model.inference(
+                                    model=temp_model)
+                                temp_model.to('cpu')
+                                del temp_model
+                                torch.cuda.empty_cache()
+                                # scale loss (use exp, e^-ax)
+                                local_eval_loss.append(
+                                    exp_decay(val_loss, alpha=0.1))  # TODO: alpha=0.05?
                         else:
                             # scale 0.0~1.0
                             local_eval_loss.append(np.random.random())
@@ -272,10 +288,14 @@ if __name__ == '__main__':
                 drifted_model.load_state_dict(drifted_weights)
 
             # Test inference after completion of training
-            ppl, ppl_std = test_inference(args, global_model, tokenizer)
+            global_model.to('cuda')
+            ppl, ppl_std = test_inference(
+                args, global_model, tokenizer, gpu=torch.cuda.current_device())
             print(f"[INFO] Wikitext PPL (wikitext2): {ppl} +- {ppl_std}")
             ppl_collect.append(ppl)
 
+            global_model.to('cpu')
+            drifted_model.to('cpu')
             gc.collect()
             torch.cuda.empty_cache()
 
@@ -283,6 +303,7 @@ if __name__ == '__main__':
             # if 'out of memory' in str(e):
             print(
                 f"[WARNING] CUDA OOM at epoch {epoch}, stopping training loop.")
+            print(e)
             torch.cuda.empty_cache()
             args.epochs = epoch
             break  # or continue

@@ -155,10 +155,13 @@ class LocalUpdate(object):
             device=self.device
         )
         avg_loss = sum(train_loss_collect) / len(train_loss_collect)
+
+        weights_cpu = {k: v.detach().cpu()
+                       for k, v in model.state_dict().items()}
         if verbose == 0:
-            return model.state_dict(), avg_loss
+            return weights_cpu, avg_loss
         else:
-            return model.state_dict(), train_loss_collect
+            return weights_cpu, train_loss_collect
 
     def inference(self, model, verbose=0):
         model.eval()
@@ -167,6 +170,11 @@ class LocalUpdate(object):
 
         with torch.no_grad():
             for batch in self.val_dataloader:
+                if batch is None:
+                    continue
+                if batch['input_ids'].size(1) == 0:
+                    continue
+
                 batch = {k: v.to(self.device) for k, v in batch.items()}
 
                 outputs = model(**batch)
