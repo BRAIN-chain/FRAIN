@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Python version: 3.6
 
+from math import ceil
+
 import argparse
 
 
@@ -82,6 +84,10 @@ def args_parser():
     #                     non-i.i.d setting (use 0 for equal splits)')
     # parser.add_argument('--stopping_rounds', type=int, default=10,
     #                     help='rounds of early stopping')
+    parser.add_argument("--min_samples", type=int, default=ceil(1024/0.9),
+                        help="Pareto Split min_samples")
+    parser.add_argument("--min_per_label", type=int, default=128,
+                        help="Pareto Split min_per_label")
     parser.add_argument('--verbose', type=int, default=1, help='verbose')
     # parser.add_argument('--seed', type=int, default=1, help='random seed')
 

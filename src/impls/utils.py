@@ -91,10 +91,17 @@ def get_dataset(args):
         # sample training data amongst users
         if args.iid:
             user_groups = cifar_iid(
-                train_dataset, args.num_users - (args.byzantines if args.byzantines < args.score_byzantines else args.score_byzantines))
+                train_dataset,
+                args.num_users - (args.byzantines if args.byzantines < args.score_byzantines else args.score_byzantines)
+            )
         else:
             user_groups = cifar_noniid(
-                train_dataset, args.num_users - (args.byzantines if args.byzantines < args.score_byzantines else args.score_byzantines), alpha=3.0)
+                train_dataset,
+                args.num_users - (args.byzantines if args.byzantines < args.score_byzantines else args.score_byzantines),
+                alpha=3.0,
+                min_samples=args.min_samples,
+                min_per_label=args.min_per_label,
+            )
     else:
         raise NotImplementedError()
 
