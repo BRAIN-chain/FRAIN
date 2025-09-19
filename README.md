@@ -4,9 +4,8 @@
 
 ```
 $ pip install -r requirements.txt
-
-<!-- $ chmod +x *.sh -->
 ```
+<!-- $ chmod +x *.sh -->
 
 # Run
 
