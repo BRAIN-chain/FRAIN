@@ -65,8 +65,8 @@ if __name__ == "__main__":
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print(f"[INFO] Using device: {device}")
 
-    # model_name = "meta-llama/Llama-3.2-1B"
     model_name = "HuggingFaceTB/SmolLM2-135M"
+    # model_name = "meta-llama/Llama-3.2-1B"
 
     model, tokenizer = make_net(
         model_name=model_name,
