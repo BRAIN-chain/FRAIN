@@ -130,6 +130,106 @@ class ByzantineLocalUpdate(LocalUpdate):
         return w_t, None
 
 
+# FedAAM
+
+
+class LocalUpdateFedAAM(object):
+    def __init__(self, args, hyps, dataset, idxs, logger, gpu=0):
+        self.args = args
+        self.hyps = hyps
+        self.logger = logger
+        self.device = torch.device(gpu)
+
+        self.trainloader, self.validloader, self.testloader = self.train_val_test(
+            dataset, list(idxs))
+
+        # Default criterion set to NLL loss function
+        # self.criterion = nn.NLLLoss().to(self.device)
+        self.criterion = nn.CrossEntropyLoss().to(self.device)
+
+    def train_val_test(self, dataset, idxs):
+        """
+        Returns train, validation and test dataloaders for a given dataset
+        and user indexes.
+        """
+        # split indexes for train, validation, and test (80, 10, 10)
+        idxs_train = idxs[:int(0.9*len(idxs))]
+        # idxs_val = idxs[int(0.8*len(idxs)):int(0.9*len(idxs))]
+        idxs_test = idxs[int(0.9*len(idxs)):]
+
+        trainloader = CifarLoader(DatasetSplit(dataset, idxs_train),
+                                  train=True, batch_size=self.args.local_bs, aug={'flip': True, 'translate': 2, })
+        # validloader = CifarLoader(DatasetSplit(dataset, idxs_val),
+        #  batch_size=self.args.local_bs)
+        testloader = CifarLoader(DatasetSplit(dataset, idxs_test),
+                                 train=False, batch_size=2000)
+        return trainloader, None, testloader
+
+    def update_weights(self, model, epochs=9.9, global_round=None,
+                       server_momentum=None, beta=0.9, lambda_scale=1.0):
+        # Set Params
+        batch_size = self.hyps['opt']['batch_size']
+        momentum = self.hyps['opt']['momentum']
+        # Assuming gradients are constant in time, for Nesterov momentum, the below ratio is how much
+        # larger the default steps will be than the underlying per-example gradients. We divide the
+        # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
+        # of the choice of momentum.
+        kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
+        # un-decoupled learning rate for PyTorch SGD
+        # lr = self.hyps['opt']['lr'] / kilostep_scale
+        lr = self.args.lr / kilostep_scale
+        wd = self.hyps['opt']['weight_decay'] * batch_size / kilostep_scale
+        lr_biases = lr * self.hyps['opt']['bias_scaler']
+        label_smoothing = self.hyps['opt']['label_smoothing']
+        whiten_bias_epochs = self.hyps['opt']['whiten_bias_epochs']
+
+        tta_level = self.hyps['net']['tta_level']
+
+        train_acc_collect, train_loss_collect, acc_collect = train(
+            # run,
+            model,
+            self.trainloader, self.testloader,
+            batch_size, epochs, momentum, lr, wd, lr_biases,
+            label_smoothing, whiten_bias_epochs,
+            tta_level
+        )
+
+        return model.state_dict(), sum(train_loss_collect) / len(train_loss_collect), None  # TODO
+
+    def inference(self, model):
+        """ Returns the inference accuracy and loss.
+        """
+
+        model.eval()
+        loss, total, correct = 0.0, 0.0, 0.0
+
+        for batch_idx, (images, labels) in enumerate(self.testloader):
+            images, labels = images.to(self.device), labels.to(self.device)
+
+            # Inference
+            outputs = model(images)
+            batch_loss = self.criterion(outputs, labels)
+            loss += batch_loss.item()
+
+            # Prediction
+            _, pred_labels = torch.max(outputs, 1)
+            pred_labels = pred_labels.view(-1)
+            correct += torch.sum(torch.eq(pred_labels, labels)).item()
+            total += len(labels)
+
+        accuracy = correct/total
+        loss /= total
+        return accuracy, loss
+
+
+class ByzantineLocalUpdateFedAAM(LocalUpdateFedAAM):
+    def update_weights(self, model, epochs=9.9, global_round=None):
+        w_t = copy.deepcopy(model.state_dict())
+        for key in w_t.keys():
+            w_t[key] = torch.zeros_like(w_t[key])
+        return w_t, None, None  # TODO
+
+
 def test_inference(args, model, test_dataset, gpu=0):
     """ Returns the test accuracy and loss.
     """

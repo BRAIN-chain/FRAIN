@@ -269,9 +269,9 @@ if __name__ == '__main__':
         # print(f'Test Loss    : {format(test_loss)}')
 
     # Saving the objects test_loss_collect and test_acc_collect:
-    file_name = './save/objects/frain_{}_{}_{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_a{}_b{}_c{}_{}.pkl'.\
+    file_name = './save/objects/frain_{}_{}_{}_N{}_C{}_iid{}_E{}_B{}_Z{}_SZ{}_D{}_W{}_S{}_TH{}_DR{}_{}_{}_a{}_b{}_c{}_{}.pkl'.\
         format(
-            args.dataset, args.model, args.epochs, args.frac, args.iid,
+            args.dataset, args.model, args.epochs, args.num_users, args.frac, args.iid,
             args.local_ep, args.local_bs, args.byzantines, args.score_byzantines,
             args.diff, args.window, args.stale, args.threshold,
             args.drift, args.interpol, args.adaptive,
