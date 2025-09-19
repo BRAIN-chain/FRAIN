@@ -15,8 +15,8 @@ if __name__ == "__main__":
 
     args = args_parser()
 
-    # model_name = "meta-llama/Llama-3.2-1B"
     model_name = "HuggingFaceTB/SmolLM2-135M"
+    # model_name = "meta-llama/Llama-3.2-1B"
 
     model, tokenizer = make_net(
         model_name=model_name,

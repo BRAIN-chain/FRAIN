@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.optim.adamw import AdamW
 
@@ -9,22 +10,33 @@ from peft import LoraConfig, get_peft_model, TaskType
 from tqdm import tqdm
 
 
+class OnlyGPU(Exception):
+    pass
+
+
 set_seed(42)
 
 
 def make_net(
-    # model_name: str = "meta-llama/Llama-3.2-1B",
     model_name: str = "HuggingFaceTB/SmolLM2-135M",
-    lora_r: int = 8,
-    lora_alpha: int = 16,
+    # model_name: str = "meta-llama/Llama-3.2-1B",
+    lora_r: int = 4,
+    lora_alpha: int = 8,
     lora_dropout: float = 0.1,
     bias="none",
-    target_modules: list[str] = ["q_proj", "v_proj"],
-    # target_modules: list[str] = ["q_proj", "k_proj", "v_proj", "o_proj",
-    #                              "gate_proj", "up_proj", "down_proj"],
-    device: str = "cuda",
+    # target_modules: list[str] = ["q_proj", "v_proj"],
+    target_modules: list[str] = ["q_proj", "k_proj", "v_proj", "o_proj",
+                                 "gate_proj", "up_proj", "down_proj"],
+    device: str = None,
     # dtype: torch.dtype = torch.float16,
 ):
+    if device:
+        device = device
+    elif torch.cuda.is_available():
+        device = "cuda"
+    else:
+        raise OnlyGPU("only GPU allowed.")
+
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         use_fast=True,
@@ -35,7 +47,6 @@ def make_net(
         print(f"The tokenizer.pad_token set as a {tokenizer.eos_token}")
     # tokenizer.pad_token = tokenizer.eos_token
 
-    # base_model =
     # 1)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -44,34 +55,38 @@ def make_net(
         low_cpu_mem_usage=True,
     )
 
-    # # # 2)
-    # # # LoRA
-    # # peft_config = LoraConfig(
-    # #     task_type=TaskType.CAUSAL_LM,
-    # #     inference_mode=False,   # fine-tuning mode
-    # #     r=lora_r,
-    # #     lora_alpha=lora_alpha,
-    # #     lora_dropout=lora_dropout,
-    # #     bias=bias,
-    # #     target_modules=target_modules,
-    # # )
-    # # model = get_peft_model(base_model, peft_config)
-
-    # 3)
+    # 2)
     # Random weights
-    # Re-init
-    model.apply(model._init_weights)
-    if hasattr(model, "post_init"):
-        model.post_init()
-    # save model
-    save_path = "./src_llm/model_state.pt"
-    torch.save(model.state_dict(), save_path)
-    print(f"Saved model state_dict to {save_path}")
+    save_path = f"./src_llm/{model_name}/model_state.pt"
+    if not os.path.exists(save_path):
+        # Re-init
+        model.apply(model._init_weights)
+        if hasattr(model, "post_init"):
+            model.post_init()
+        # save model
+        save_dir = os.path.dirname(save_path)
+        os.makedirs(save_dir, exist_ok=True)
+        torch.save(model.state_dict(), save_path)
+        print(f"Saved model state_dict to {save_path}")
+    else:
+        # Load random weights
+        model.load_state_dict(torch.load(
+            f"./src_llm/{model_name}/model_state.pt"))
 
-    # 3)
-    # Load random weights
-    model.load_state_dict(torch.load("./src_llm/model_state.pt"))
+    # # 3)
+    # # LoRA
+    # peft_config = LoraConfig(
+    #     task_type=TaskType.CAUSAL_LM,
+    #     inference_mode=False,   # fine-tuning mode
+    #     r=lora_r,
+    #     lora_alpha=lora_alpha,
+    #     lora_dropout=lora_dropout,
+    #     bias=bias,
+    #     target_modules=target_modules,
+    # )
+    # model = get_peft_model(model, peft_config)
 
+    # ready to train
     model = model.to(device)
     model.train()
 
@@ -110,6 +125,11 @@ def train(
 
         running_loss = 0.0
         for step, batch in progress_bar:
+            if batch is None:
+                continue
+            if batch['input_ids'].size(1) == 0:
+                continue
+
             # batch: dict(input_ids, attention_mask, labels)
             batch = {k: v.to(device) for k, v in batch.items()}
 

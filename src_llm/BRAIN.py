@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     # Make Model
     model_name = "HuggingFaceTB/SmolLM2-135M"
+    # model_name = "meta-llama/Llama-3.2-1B"
     global_model, tokenizer = make_net(
         model_name=model_name,
     )
