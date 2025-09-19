@@ -17,6 +17,22 @@ def args_parser():
     parser.add_argument('--frac', type=float, default=0.1,  # 10%
                         help='the fraction of clients: C')
 
+    # fedawe arguments
+    parser.add_argument('--awe_global_lr', type=float, default=1.0,
+                        help='FedAWE Global LR')
+
+    # fedaam arguments
+    parser.add_argument('--aam-delta', type=float, default=0.2,
+                        help='EWMA delta for e_t (Eq.(8))')
+    parser.add_argument('--aam-sigma', type=float, default=0.1,
+                        help='sigma for Rule-2 (Eqs.(13),(14))')
+    parser.add_argument('--aam-zeta', type=float, default=0.0,
+                        help='Residual zeta in Algorithm 1')
+    parser.add_argument('--beta', type=float, default=0.9,
+                        help='Local momentum beta (Eq.(10))')
+    parser.add_argument('--lambda-scale', type=float, default=1.0,
+                        help='Gradient scale lambda (Eq.(10))')
+
     # fedasync arguments
     parser.add_argument('--stale', type=int, default=4,
                         help='max staleness (default: 4)')
