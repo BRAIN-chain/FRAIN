@@ -5,15 +5,16 @@
 ```
 $ pip install -r requirements.txt
 
-$ chmod +x *.sh
+<!-- $ chmod +x *.sh -->
 ```
 
 # Run
 
+<!-- 
 ```bash
 $ eval.sh 0
 $ llm_eval.sh 0
-```
+``` -->
 
 ```bash
 # SGD (single-thread)
@@ -32,21 +33,21 @@ $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/BRAIN.py --model=cnn --dat
 $ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=$(pwd) python src/FRAIN.py --model=cnn --dataset=cifar --iid=1 --epochs=1000 --num_users=21 --byzantines=0 --score_byzantines=0 --frac=0.1 --stale=4 --diff=0.55 --window=4 --threshold=0.0 --drift=0 --interpol=slerp --adaptive=constant --verbose=0 --local_bs=50
 ```
 
-# Visualize
+<!-- # Visualize
 
 - Do multiple run (ex. 10) to draw dots well.
 
 ```bash
 $ PYTHONPATH=$(pwd) python visual/graph.py
 $ PYTHONPATH=$(pwd) python visual/graph_combine.py
-```
+``` -->
 
-# Test
+<!-- # Test
 
 ```bash
 $ PYTHONPATH=$(pwd) pytest test/test_cache.py
 $ PYTHONPATH=$(pwd) pytest test/test_ma.py
-```
+``` -->
 
 # References
 
