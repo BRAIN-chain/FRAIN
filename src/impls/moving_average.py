@@ -2,31 +2,29 @@ from collections import deque
 
 
 class MovingAverage:
-    def __init__(self, size):
+    def __init__(self, size, mode="wisa"):
         """
-        :param size: Integer, size of the window for the moving average.
+        :param size: Integer, window size.
+        :param mode: "wisa" (moving average) or "brain" (latest / window-sum)
         """
         self.size = size
+        self.mode = mode
         self.queue = deque()
         self.sum = 0
 
     def next(self, val):
-        """
-        Calculate the moving average with a new value.
-        :param val: New value to add to the window for the moving average calculation.
-        :return: Float, the current moving average.
-        """
         if len(self.queue) == self.size:
             self.sum -= self.queue.popleft()
         self.queue.append(val)
         self.sum += val
+
+        if self.mode == "brain":
+            return 0 if self.sum == 0 else val / self.sum
         return self.sum / len(self.queue)
 
     def current(self):
-        """
-        Returns the current moving average without adding a new value.
-        :return: Float, the current moving average.
-        """
-        if not self.queue:  # Handle case where the queue is empty
+        if not self.queue:
             return 0
+        if self.mode == "brain":
+            return 0 if self.sum == 0 else self.queue[-1] / self.sum
         return self.sum / len(self.queue)

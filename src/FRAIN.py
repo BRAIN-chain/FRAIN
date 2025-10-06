@@ -74,7 +74,7 @@ if __name__ == '__main__':
     cache = ItemCache(min_counter=0, max_counter=args.stale)
 
     # Moving Average
-    wma = MovingAverage(args.window)
+    wma = MovingAverage(args.window, args.window_mode)
 
     # drift
     drifted_model = make_net(widths, batchnorm_momentum, scaling_factor)

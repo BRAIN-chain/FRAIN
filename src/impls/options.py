@@ -52,6 +52,8 @@ def args_parser():
                         help="number of Byzantine users who submit random score: SZ")
 
     # FRAIN arguments
+    parser.add_argument('--window_mode', type=str, default='wisa',
+                        help='score averaging method (wisa or brain)')
     parser.add_argument('--drift', type=int, default=0,
                         help="number of users who are drifted from global model")
     parser.add_argument('--fast_window', type=int, default=2,
